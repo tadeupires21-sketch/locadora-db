@@ -1,6 +1,6 @@
 -- =====================================
--- Nome: Tadeu Belfort Neto
--- DRE: 119034813 
+Grupo: Tadeu Belfort Neto -119034813 
+         Vicente Alves 120044148 
 -- Arquivo: scheme.sql (versão revisada)
 -- =====================================
 
