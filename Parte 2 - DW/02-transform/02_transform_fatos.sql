@@ -4,7 +4,12 @@
 --
 -- Este script depende das dimensoes geradas em:
 -- transform/01_transform_dimensoes.sql
+--
+-- Timezone: fixado para que os casts ::DATE sejam determinísticos
+-- (ver nota completa em 01_transform_dimensoes.sql).
 -- =====================================================
+
+SET timezone TO 'America/Sao_Paulo';
 
 -- =====================================================
 -- PRÉ-VALIDAÇÃO: alertas de qualidade no staging bruto
@@ -57,7 +62,8 @@ BEGIN
     END IF;
 END $$;
 
-CREATE SCHEMA IF NOT EXISTS stg;
+-- (schema stg já criado em 00-infra/00_create_schemas.sql e
+--  01_transform_dimensoes.sql; não recriar aqui.)
 
 -- =====================================================
 -- conf_reserva
@@ -99,14 +105,7 @@ normalizado AS (
         COALESCE(data_reserva, data_solicitacao, dt_extracao)::DATE AS data_reserva,
         data_inicio::DATE AS data_inicio,
         data_fim::DATE AS data_fim,
-        CASE
-            WHEN LOWER(COALESCE(status, '')) LIKE '%cancel%' THEN 'cancelada'
-            WHEN LOWER(COALESCE(status, '')) LIKE '%confirm%' THEN 'confirmada'
-            WHEN LOWER(COALESCE(status, '')) LIKE '%espera%' THEN 'espera'
-            WHEN LOWER(COALESCE(status, '')) LIKE '%wait%' THEN 'espera'
-            WHEN LOWER(COALESCE(status, '')) LIKE '%ativa%' THEN 'ativa'
-            ELSE 'ativa'
-        END AS status,
+        stg.fn_normaliza_status_reserva(status) AS status,
         preco_previsto::NUMERIC(10,2) AS preco_previsto,
         preco_final::NUMERIC(10,2) AS preco_final,
         dt_extracao
@@ -271,23 +270,36 @@ SELECT
     TO_CHAR(n.data_registro, 'YYYYMMDD')::INTEGER AS id_data_registro,
     CASE WHEN n.data_retirada IS NOT NULL THEN TO_CHAR(n.data_retirada, 'YYYYMMDD')::INTEGER END AS id_data_retirada,
     CASE WHEN n.data_devolucao IS NOT NULL THEN TO_CHAR(n.data_devolucao, 'YYYYMMDD')::INTEGER END AS id_data_devolucao,
-    CASE
-        WHEN n.data_retirada IS NOT NULL AND n.data_devolucao IS NOT NULL
-            THEN GREATEST(n.data_devolucao - n.data_retirada, 0)
-    END AS dias_alocados,
+    -- =================================================================
+    -- MEDIDAS CANÔNICAS (fonte única da verdade)
+    -- O DW (03_load_fatos.sql) DEVE consumir estas colunas em vez de
+    -- recalcular a partir das datas/km crus. Convenção de dias: INCLUSIVA
+    -- (retirada e devolução no mesmo dia = 1 dia), por isso o "+ 1".
+    -- Todas protegidas com GREATEST(..., 0) para nunca ficarem negativas.
+    -- =================================================================
+    stg.fn_dias_inclusivo(n.data_retirada_prevista, n.data_devolucao_prevista) AS dias_previstos,
+    stg.fn_dias_inclusivo(n.data_retirada, n.data_devolucao) AS dias_realizados,
+    -- Dias de atraso: só conta atraso real (devolução antecipada vira 0).
+    stg.fn_dias_atraso(n.data_devolucao, n.data_devolucao_prevista) AS atraso_devolucao_dias,
+    -- Locações ainda abertas: dias restantes até a devolução prevista.
     CASE
         WHEN n.data_devolucao IS NULL AND n.data_devolucao_prevista IS NOT NULL
             THEN n.data_devolucao_prevista - CURRENT_DATE
     END AS dias_para_devolucao,
-    CASE
-        WHEN n.km_entrega IS NOT NULL AND n.km_devolucao IS NOT NULL
-            THEN GREATEST(n.km_devolucao - n.km_entrega, 0)
-    END AS km_rodado,
+    stg.fn_km_rodado(n.km_entrega, n.km_devolucao) AS km_rodado,
     n.gasolina_entrega,
     n.gasolina_devolucao,
     n.valor_atraso,
     n.valor_reparos,
     n.valor_cobrado,
+    -- =================================================================
+    -- MULTA POR ATRASO (regra de negócio)
+    -- Prioriza o valor de atraso já cobrado na origem (G1/G2). Quando a
+    -- fonte não tem esse valor (G3/G4), estima a multa como:
+    --   dias_de_atraso × diária do grupo do veículo.
+    -- Assim a medida fica comparável entre os 4 grupos.
+    -- =================================================================
+    stg.fn_multa_atraso(n.valor_atraso, n.data_devolucao, n.data_devolucao_prevista, g.diaria) AS valor_multa_atraso,
     (n.src_reserva_id IS NOT NULL) AS reserva_previa,
     n.status,
     n.estado_entrega,
@@ -300,12 +312,60 @@ LEFT JOIN stg.conf_condutor cd
        ON cd.condutor_nk = n.condutor_nk
 LEFT JOIN stg.conf_veiculo v
        ON v.veiculo_nk = n.veiculo_nk
+-- grupo do veículo: necessário para estimar a multa via diária
+LEFT JOIN stg.conf_grupo_veiculo g
+       ON g.grupo_veiculo_nk = v.grupo_veiculo_nk
 LEFT JOIN stg.conf_patio pr
        ON pr.patio_nk = n.patio_retirada_nk
 LEFT JOIN stg.conf_patio pd
        ON pd.patio_nk = n.patio_devolucao_nk
 LEFT JOIN stg.conf_reserva r
        ON r.reserva_nk = n.reserva_nk;
+
+-- =====================================================
+-- conf_cobranca
+-- Grao: uma linha por LOCACAO (locacao_nk), nao por cobranca.
+-- O G1 pode ter varias cobrancas por locacao; G2/G3/G4 tem 1:1
+-- (derivada do valor da locacao na extracao). Aqui consolidamos:
+--   valor_cobranca  = soma de todas as cobrancas da locacao
+--   status_cobranca = status consolidado (regra de prioridade abaixo)
+-- Alimenta dw.fato_locacao.valor_cobranca e status_cobranca.
+-- =====================================================
+DROP TABLE IF EXISTS stg.conf_cobranca CASCADE;
+
+CREATE TABLE stg.conf_cobranca AS
+WITH base AS (
+    SELECT
+        (grupo_fonte::TEXT || '-' || src_locacao_id::TEXT) AS locacao_nk,
+        grupo_fonte,
+        src_locacao_id,
+        valor,
+        -- Normaliza o status cru das diferentes fontes para um vocabulario unico.
+        stg.fn_normaliza_status_cobranca(status) AS status_norm,
+        data_pagamento,
+        dt_extracao
+    FROM stg.cobranca
+    WHERE src_locacao_id IS NOT NULL
+)
+SELECT
+    locacao_nk,
+    grupo_fonte,
+    COUNT(*) AS qtd_cobrancas,
+    SUM(COALESCE(valor, 0))::NUMERIC(12,2) AS valor_cobranca,
+    -- Prioridade: qualquer pendencia/atraso domina; so e 'pago' se TODAS
+    -- as cobrancas estiverem pagas; cancelamento total vira 'cancelada';
+    -- combinacoes restantes (ex.: parte paga, parte cancelada) viram 'parcial'.
+    CASE
+        WHEN COUNT(*) FILTER (WHERE status_norm = 'pendente')  > 0 THEN 'pendente'
+        WHEN COUNT(*) FILTER (WHERE status_norm = 'em_atraso') > 0 THEN 'em_atraso'
+        WHEN COUNT(*) FILTER (WHERE status_norm = 'pago')      = COUNT(*) THEN 'pago'
+        WHEN COUNT(*) FILTER (WHERE status_norm = 'cancelada') = COUNT(*) THEN 'cancelada'
+        ELSE 'parcial'
+    END AS status_cobranca,
+    MAX(data_pagamento) AS data_ultimo_pagamento,
+    MAX(dt_extracao) AS dt_extracao
+FROM base
+GROUP BY locacao_nk, grupo_fonte;
 
 -- =====================================================
 -- conf_veiculo_no_patio

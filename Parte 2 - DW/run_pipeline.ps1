@@ -58,8 +58,9 @@ $inicio = Get-Date
 Log "=== Pipeline ETL — Locadora de Veículos DW ===" "INFO"
 Log "Banco: $env:PGDATABASE em $env:PGHOST`:$env:PGPORT" "INFO"
 
-# ---- ETAPA 0: Infraestrutura (schemas) ----
+# ---- ETAPA 0: Infraestrutura (schemas + funções) ----
 Invoke-SQL "00-infra\00_create_schemas.sql" "Criação de schemas (stg, dw)"
+Invoke-SQL "00-infra\01_functions.sql"      "Criação das funções de transformação"
 
 # ---- ETAPA 1: Staging (criar tabelas) ----
 Invoke-SQL "01-staging\create_staging.sql" "Criação das tabelas de staging"

@@ -15,13 +15,31 @@
 --   e usa os IDENTITY gerados pelo próprio DW como surrogate keys finais.
 --   Portanto, a variação dos sk_* entre execuções não compromete a
 --   integridade do DW, apenas a rastreabilidade interna do staging.
+--
+-- NOTA SOBRE TIMEZONE:
+--   A staging usa TIMESTAMP sem fuso. Fixamos o fuso canônico da sessão
+--   para que os casts ::DATE caiam sempre no mesmo dia, independente do
+--   fuso do servidor que executa o ETL.
+--   LIMITAÇÃO CONHECIDA: se as 4 fontes gravarem em fusos diferentes,
+--   a conversão correta exigiria saber o fuso de origem de cada grupo
+--   (idealmente armazenar TIMESTAMPTZ na extração). Enquanto isso não
+--   existe, assume-se que todas as fontes já estão em horário de Brasília.
 -- =====================================================
+
+SET timezone TO 'America/Sao_Paulo';
 
 CREATE SCHEMA IF NOT EXISTS stg;
 
 -- =====================================================
 -- conf_cliente
 -- Chave natural: grupo_fonte-src_id
+--
+-- DEDUP: a deduplicação é POR FONTE (grupo_fonte, src_id) + última
+-- dt_extracao. NÃO há dedup entre fontes: o mesmo cliente físico
+-- cadastrado em 2 locadoras vira 2 linhas (por isso grupo_fonte faz
+-- parte da NK). Decisão consciente — modelo multi-tenant. Consequência:
+-- métricas de "clientes únicos" podem contar em dobro entre grupos.
+-- Uma dedup cross-source exigiria casar por CPF/CNPJ/e-mail (não feito).
 -- =====================================================
 DROP TABLE IF EXISTS stg.conf_cliente CASCADE;
 
@@ -41,10 +59,10 @@ normalizado AS (
         src_id,
         grupo_fonte,
         COALESCE(NULLIF(TRIM(nome), ''), 'Cliente nao informado') AS nome,
-        CASE
-            WHEN UPPER(TRIM(COALESCE(tipo, 'PF'))) = 'PJ' THEN 'PJ'
-            ELSE 'PF'
-        END AS tipo,
+        -- Flag de imputação: distingue nome real de sentinela preenchido,
+        -- para que análises possam excluir/auditar os imputados.
+        (NULLIF(TRIM(nome), '') IS NULL) AS flag_nome_imputado,
+        stg.fn_normaliza_tipo_cliente(tipo) AS tipo,
         NULLIF(TRIM(cidade), '') AS cidade,
         UPPER(NULLIF(TRIM(uf), '')) AS uf,
         LOWER(NULLIF(TRIM(email), '')) AS email,
@@ -59,6 +77,7 @@ SELECT
     src_id,
     grupo_fonte,
     nome,
+    flag_nome_imputado,
     tipo,
     cidade,
     uf,
@@ -316,26 +335,17 @@ normalizado AS (
         grupo_fonte,
         src_grupo_id,
         src_empresa_id,
-        COALESCE(NULLIF(REGEXP_REPLACE(UPPER(TRIM(COALESCE(placa, ''))), '[^A-Z0-9]+', '', 'g'), ''), 'SEMPLACA') AS placa,
+        stg.fn_normaliza_placa(placa) AS placa,
+        -- Flag de imputação: TRUE quando a placa original era vazia/nula.
+        stg.fn_placa_imputada(placa) AS flag_placa_imputada,
         NULLIF(TRIM(chassi), '') AS chassi,
         COALESCE(NULLIF(TRIM(modelo), ''), 'Modelo nao informado') AS modelo,
         COALESCE(NULLIF(TRIM(marca), ''), 'Marca nao informada') AS marca,
         NULLIF(TRIM(cor), '') AS cor,
-        CASE
-            WHEN LOWER(COALESCE(tipo_mecanizacao, '')) LIKE '%auto%' THEN 'automatico'
-            ELSE 'manual'
-        END AS tipo_mecanizacao,
+        stg.fn_normaliza_tipo_mecanizacao(tipo_mecanizacao) AS tipo_mecanizacao,
         COALESCE(ar_condicionado, FALSE) AS ar_condicionado,
         COALESCE(adaptado_cadeirante, FALSE) AS adaptado_cadeirante,
-        CASE
-            WHEN LOWER(COALESCE(status, '')) LIKE '%alug%' THEN 'alugado'
-            WHEN LOWER(COALESCE(status, '')) LIKE '%locad%' THEN 'alugado'
-            WHEN LOWER(COALESCE(status, '')) LIKE '%manut%' THEN 'manutencao'
-            WHEN LOWER(COALESCE(status, '')) LIKE '%indisp%' THEN 'indisponivel'
-            WHEN LOWER(COALESCE(status, '')) LIKE '%dispon%' THEN 'disponivel'
-            WHEN LOWER(COALESCE(status, '')) LIKE '%avail%' THEN 'disponivel'
-            ELSE 'disponivel'
-        END AS status,
+        stg.fn_normaliza_status_veiculo(status) AS status,
         COALESCE(NULLIF(TRIM(nome_empresa), ''), 'Empresa G' || grupo_fonte::TEXT) AS nome_empresa,
         dt_extracao
     FROM base
@@ -351,6 +361,7 @@ SELECT
     n.src_grupo_id,
     n.src_empresa_id,
     n.placa,
+    n.flag_placa_imputada,
     n.chassi,
     n.modelo,
     n.marca,
@@ -426,8 +437,14 @@ SELECT
     EXTRACT(DAY FROM data)::INTEGER AS dia,
     EXTRACT(QUARTER FROM data)::INTEGER AS trimestre,
     EXTRACT(ISODOW FROM data)::INTEGER AS dia_semana,
-    TRIM(TO_CHAR(data, 'TMDay')) AS nome_dia_semana,
-    TRIM(TO_CHAR(data, 'TMMonth')) AS nome_mes,
+    -- Nomes em português via CASE/array (TO_CHAR 'TMDay'/'TMMonth' depende
+    -- do lc_time do servidor e não é determinístico entre ambientes).
+    (ARRAY['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira',
+           'Sexta-feira','Sábado','Domingo']
+     )[EXTRACT(ISODOW FROM data)::INTEGER] AS nome_dia_semana,
+    (ARRAY['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+           'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+     )[EXTRACT(MONTH FROM data)::INTEGER] AS nome_mes,
     (EXTRACT(ISODOW FROM data) IN (6, 7)) AS fim_de_semana
 FROM datas
 WHERE data IS NOT NULL

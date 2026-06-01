@@ -1,0 +1,51 @@
+# =====================================================
+# .gitignore — Projeto Locadora (OLTP + DW)
+# Mantém versionado apenas o essencial da pipeline e o material
+# de avaliação; ignora ferramentas locais, lixo de SO e temporários.
+# =====================================================
+
+# ---- Ferramentas locais / IDE (não fazem parte da entrega) ----
+.claude/
+.vscode/
+.idea/
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# ---- Lixo de sistema operacional ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Código aposentado (substituído pela pipeline refatorada) ----
+# Mantido localmente para referência histórica, fora do versionamento.
+# Para incluí-lo na entrega, comente a linha abaixo.
+_deprecated/
+
+# ---- Saídas/temporários de execução do pipeline ----
+*.log
+*.tmp
+/tmp/
+psql_output*.txt
+*.bak
+
+# ---- Credenciais (nunca versionar) ----
+.env
+.pgpass
+*.pgpass
+**/secrets*.sql
+
+# =====================================================
+# O que PERMANECE versionado (o professor vê):
+#   Parte 1 - OLTP/         → modelagem e scripts OLTP
+#   Parte 2 - DW/00-infra   → schemas + funções
+#   Parte 2 - DW/01-staging → extração
+#   Parte 2 - DW/02-transform → transformação
+#   Parte 2 - DW/03-dw      → data warehouse
+#   Parte 2 - DW/04-reports → consultas de negócio
+#   Parte 2 - DW/04-tests   → testes e validações
+#   Parte 2 - DW/docs       → documentação
+#   Parte 2 - DW/run_pipeline.ps1
+#   schema.sql, seed.sql, folha_de_rosto.pdf, diagrams/
+# =====================================================

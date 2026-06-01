@@ -18,6 +18,7 @@ FROM (
         ('conf_tempo',                (SELECT COUNT(*) FROM stg.conf_tempo)),
         ('conf_reserva',              (SELECT COUNT(*) FROM stg.conf_reserva)),
         ('conf_locacao',              (SELECT COUNT(*) FROM stg.conf_locacao)),
+        ('conf_cobranca',             (SELECT COUNT(*) FROM stg.conf_cobranca)),
         ('conf_veiculo_no_patio',     (SELECT COUNT(*) FROM stg.conf_veiculo_no_patio)),
         ('conf_movimentacao_patio',   (SELECT COUNT(*) FROM stg.conf_movimentacao_patio))
 ) AS v(tabela, qtd_registros)
@@ -216,5 +217,93 @@ SELECT
     'conf_locacao' AS tabela,
     COUNT(*) FILTER (WHERE data_devolucao IS NOT NULL AND data_retirada IS NOT NULL AND data_devolucao < data_retirada) AS periodo_invertido,
     COUNT(*) FILTER (WHERE km_rodado < 0) AS km_negativo,
-    COUNT(*) FILTER (WHERE valor_cobrado < 0) AS valor_negativo
+    COUNT(*) FILTER (WHERE valor_cobrado < 0) AS valor_negativo,
+    COUNT(*) FILTER (WHERE dias_realizados < 0) AS dias_realizados_negativo,
+    COUNT(*) FILTER (WHERE atraso_devolucao_dias < 0) AS atraso_negativo,
+    COUNT(*) FILTER (WHERE valor_multa_atraso < 0) AS multa_negativa
 FROM stg.conf_locacao;
+
+-- =====================================================
+-- conf_cobranca (grao por locacao)
+-- =====================================================
+
+-- Volume e total financeiro.
+SELECT 'conf_cobranca' AS tabela,
+    COUNT(*) AS qtd_locacoes_com_cobranca,
+    SUM(qtd_cobrancas) AS qtd_cobrancas_totais,
+    ROUND(SUM(valor_cobranca), 2) AS valor_total
+FROM stg.conf_cobranca;
+
+-- Duplicidade: o grao e por locacao, entao locacao_nk deve ser unico.
+SELECT 'conf_cobranca' AS tabela, locacao_nk AS chave_natural, COUNT(*) AS qtd
+FROM stg.conf_cobranca
+GROUP BY locacao_nk
+HAVING COUNT(*) > 1;
+
+-- Cobranca orfa: aponta para uma locacao que nao existe na conformance.
+-- Resultado esperado: 0 linhas.
+SELECT cob.locacao_nk
+FROM stg.conf_cobranca cob
+LEFT JOIN stg.conf_locacao l ON l.locacao_nk = cob.locacao_nk
+WHERE l.locacao_nk IS NULL;
+
+-- Cobranca com valor negativo (nao deveria ocorrer).
+SELECT 'conf_cobranca' AS tabela,
+    COUNT(*) FILTER (WHERE valor_cobranca < 0) AS valor_negativo
+FROM stg.conf_cobranca;
+
+-- =====================================================
+-- VALIDAÇÃO DE DOMÍNIO CATEGÓRICO
+-- Lista os valores distintos efetivamente presentes em cada campo
+-- categórico. Qualquer valor fora da whitelist esperada (incluindo
+-- 'desconhecida'/'desconhecido') deve ser investigado.
+-- =====================================================
+
+-- Domínio esperado: cancelada | confirmada | espera | ativa | desconhecida
+SELECT 'conf_reserva.status' AS campo, status AS valor, COUNT(*) AS qtd
+FROM stg.conf_reserva
+GROUP BY status
+ORDER BY qtd DESC;
+
+-- Domínio esperado: cancelada | aberta | finalizada | registrada | <status cru da fonte>
+-- (conf_locacao.status NÃO é domínio fechado — repassa o status da origem
+--  quando não casa com as regras. Use esta query para auditar o que entra.)
+SELECT 'conf_locacao.status' AS campo, status AS valor, COUNT(*) AS qtd
+FROM stg.conf_locacao
+GROUP BY status
+ORDER BY qtd DESC;
+
+-- Domínio esperado: alugado | manutencao | indisponivel | disponivel | desconhecido
+SELECT 'conf_veiculo.status' AS campo, status AS valor, COUNT(*) AS qtd
+FROM stg.conf_veiculo
+GROUP BY status
+ORDER BY qtd DESC;
+
+-- Domínio esperado: automatico | manual
+SELECT 'conf_veiculo.tipo_mecanizacao' AS campo, tipo_mecanizacao AS valor, COUNT(*) AS qtd
+FROM stg.conf_veiculo
+GROUP BY tipo_mecanizacao
+ORDER BY qtd DESC;
+
+-- Domínio esperado: PF | PJ
+SELECT 'conf_cliente.tipo' AS campo, tipo AS valor, COUNT(*) AS qtd
+FROM stg.conf_cliente
+GROUP BY tipo
+ORDER BY qtd DESC;
+
+-- =====================================================
+-- AUDITORIA DE IMPUTAÇÃO
+-- Quantos registros tiveram valores preenchidos por sentinela.
+-- Útil para decidir se a qualidade da fonte é aceitável.
+-- =====================================================
+SELECT
+    'conf_cliente' AS tabela,
+    COUNT(*) FILTER (WHERE flag_nome_imputado) AS nomes_imputados,
+    COUNT(*) AS total
+FROM stg.conf_cliente;
+
+SELECT
+    'conf_veiculo' AS tabela,
+    COUNT(*) FILTER (WHERE flag_placa_imputada) AS placas_imputadas,
+    COUNT(*) AS total
+FROM stg.conf_veiculo;

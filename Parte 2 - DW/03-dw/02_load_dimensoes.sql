@@ -9,7 +9,8 @@
 --   stg.conf_tempo, stg.conf_cliente, stg.conf_condutor,
 --   stg.conf_grupo_veiculo, stg.conf_empresa, stg.conf_patio,
 --   stg.conf_veiculo, stg.conf_reserva, stg.conf_locacao,
---   stg.conf_veiculo_no_patio, stg.conf_movimentacao_patio.
+--   stg.conf_cobranca, stg.conf_veiculo_no_patio,
+--   stg.conf_movimentacao_patio.
 -- =====================================================
 
 BEGIN;
@@ -26,16 +27,18 @@ BEGIN;
 -- Inclui todas as datas relevantes vindas de reservas, locacoes
 -- e movimentacoes. Datas realizadas nulas sao ignoradas sem erro.
 -- =====================================================
+-- Calendário CONTÍNUO: em vez de inserir apenas as datas que aparecem
+-- nos fatos (que deixaria buracos e quebraria séries temporais), geramos
+-- TODOS os dias entre a menor e a maior data observada. Assim relatórios
+-- por dia/mês não ficam com lacunas.
 WITH datas AS (
     SELECT data FROM stg.conf_tempo
-
     UNION
     SELECT data_reserva::DATE FROM stg.conf_reserva WHERE data_reserva IS NOT NULL
     UNION
     SELECT data_inicio::DATE FROM stg.conf_reserva WHERE data_inicio IS NOT NULL
     UNION
     SELECT data_fim::DATE FROM stg.conf_reserva WHERE data_fim IS NOT NULL
-
     UNION
     SELECT data_registro::DATE FROM stg.conf_locacao WHERE data_registro IS NOT NULL
     UNION
@@ -46,11 +49,21 @@ WITH datas AS (
     SELECT data_devolucao_prevista::DATE FROM stg.conf_locacao WHERE data_devolucao_prevista IS NOT NULL
     UNION
     SELECT data_devolucao::DATE FROM stg.conf_locacao WHERE data_devolucao IS NOT NULL
-
     UNION
     SELECT data_movimentacao::DATE
     FROM stg.conf_movimentacao_patio
     WHERE data_movimentacao IS NOT NULL
+),
+intervalo AS (
+    SELECT MIN(data) AS dt_min, MAX(data) AS dt_max
+    FROM datas
+    WHERE data IS NOT NULL
+),
+calendario AS (
+    -- Gera a série contínua de dias do período observado.
+    SELECT generate_series(dt_min, dt_max, INTERVAL '1 day')::DATE AS data
+    FROM intervalo
+    WHERE dt_min IS NOT NULL
 )
 INSERT INTO dw.dim_tempo (
     sk_tempo,
@@ -69,13 +82,19 @@ SELECT
     data,
     EXTRACT(YEAR FROM data)::INTEGER AS ano,
     EXTRACT(MONTH FROM data)::INTEGER AS mes,
-    TRIM(TO_CHAR(data, 'TMMonth')) AS nome_mes,
+    -- Nomes em português via CASE explícito (NÃO usar TO_CHAR 'TMMonth':
+    -- depende do lc_time do servidor e não é determinístico entre ambientes).
+    (ARRAY['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+           'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+     )[EXTRACT(MONTH FROM data)::INTEGER] AS nome_mes,
     EXTRACT(QUARTER FROM data)::INTEGER AS trimestre,
     EXTRACT(DAY FROM data)::INTEGER AS dia,
     EXTRACT(ISODOW FROM data)::INTEGER AS dia_semana,
-    TRIM(TO_CHAR(data, 'TMDay')) AS nome_dia_semana,
+    (ARRAY['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira',
+           'Sexta-feira','Sábado','Domingo']
+     )[EXTRACT(ISODOW FROM data)::INTEGER] AS nome_dia_semana,
     (EXTRACT(ISODOW FROM data) IN (6, 7)) AS flag_fim_de_semana
-FROM datas
+FROM calendario
 WHERE data IS NOT NULL
 ON CONFLICT (data) DO UPDATE
 SET
@@ -95,19 +114,22 @@ INSERT INTO dw.dim_cliente (
     cliente_id,
     nome,
     tipo,
-    cidade
+    cidade,
+    flag_nome_imputado
 )
 SELECT
     cliente_nk AS cliente_id,
     nome,
     tipo,
-    cidade
+    cidade,
+    flag_nome_imputado
 FROM stg.conf_cliente
 ON CONFLICT (cliente_id) DO UPDATE
 SET
     nome = EXCLUDED.nome,
     tipo = EXCLUDED.tipo,
-    cidade = EXCLUDED.cidade;
+    cidade = EXCLUDED.cidade,
+    flag_nome_imputado = EXCLUDED.flag_nome_imputado;
 
 -- =====================================================
 -- dim_condutor
@@ -231,6 +253,7 @@ INSERT INTO dw.dim_veiculo (
     ar_condicionado,
     adaptado_cadeirante,
     status,
+    flag_placa_imputada,
     sk_grupo_veiculo,
     sk_empresa
 )
@@ -245,6 +268,7 @@ SELECT
     v.ar_condicionado,
     v.adaptado_cadeirante,
     v.status,
+    v.flag_placa_imputada,
     g.sk_grupo_veiculo,
     e.sk_empresa
 FROM stg.conf_veiculo v
@@ -263,6 +287,7 @@ SET
     ar_condicionado = EXCLUDED.ar_condicionado,
     adaptado_cadeirante = EXCLUDED.adaptado_cadeirante,
     status = EXCLUDED.status,
+    flag_placa_imputada = EXCLUDED.flag_placa_imputada,
     sk_grupo_veiculo = EXCLUDED.sk_grupo_veiculo,
     sk_empresa = EXCLUDED.sk_empresa;
 

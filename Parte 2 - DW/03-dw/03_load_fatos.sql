@@ -6,13 +6,13 @@
 -- As fatos usam stg.conf_* como fonte principal e resolvem as SKs
 -- por meio das chaves naturais conformadas.
 --
--- Tabelas conformadas identificadas nos scripts existentes:
---   stg.conf_reserva, stg.conf_locacao, stg.conf_movimentacao_patio.
+-- Tabelas conformadas usadas como fonte:
+--   stg.conf_reserva, stg.conf_locacao, stg.conf_cobranca,
+--   stg.conf_movimentacao_patio.
 --
--- Dependencia ausente:
---   Nao existe stg.conf_cobranca na camada transform atual. Por isso
---   status_cobranca permanece nulo ate que essa tabela conformada seja
---   criada pela transformacao.
+-- Cobranca:
+--   stg.conf_cobranca (grao por locacao) alimenta valor_cobranca e
+--   status_cobranca de dw.fato_locacao via LEFT JOIN por locacao_nk.
 -- =====================================================
 
 BEGIN;
@@ -148,9 +148,12 @@ SELECT
     tf.sk_tempo AS sk_tempo_fim,
     r.status AS status_reserva,
     1 AS qtd_reservas,
+    -- Protegido com GREATEST para nunca ficar negativo (datas invertidas
+    -- viram 0, que a validação pós-carga sinaliza como inválido).
+    -- Convenção inclusiva (+1), igual a dias_realizados em fato_locacao.
     CASE
         WHEN r.data_inicio IS NOT NULL AND r.data_fim IS NOT NULL
-            THEN (r.data_fim - r.data_inicio + 1)::INTEGER
+            THEN GREATEST(r.data_fim - r.data_inicio + 1, 0)::INTEGER
     END AS dias_reservados,
     (r.status = 'cancelada') AS flag_cancelada,
     (r.status = 'confirmada') AS flag_confirmada,
@@ -185,17 +188,15 @@ SET
 
 -- =====================================================
 -- fato_locacao
--- Usa stg.conf_locacao como fonte principal.
+-- Usa stg.conf_locacao como fonte principal e stg.conf_cobranca
+-- (grao por locacao) para as medidas financeiras.
 --
--- Dependencia ausente na camada transform:
---   Nao existe stg.conf_cobranca nos scripts inspecionados em 02-transform.
---   Para preencher status_cobranca de forma conformada, recomenda-se criar
---   stg.conf_cobranca com ao menos:
---     cobranca_nk, locacao_nk, valor_cobranca, status_cobranca, dt_extracao.
---
--- Enquanto essa tabela conformada nao existir, o DW carrega valor_cobranca
--- a partir de stg.conf_locacao.valor_cobrado e deixa status_cobranca nulo,
--- sem buscar origem alternativa fora da camada transform.
+-- Cobranca:
+--   valor_cobranca  = stg.conf_cobranca.valor_cobranca quando existe;
+--                     senao, fallback para conf_locacao.valor_cobrado.
+--   status_cobranca = stg.conf_cobranca.status_cobranca (pode ser nulo se
+--                     a locacao nao tiver nenhuma cobranca associada).
+-- O LEFT JOIN garante que locacoes sem cobranca ainda entrem no fato.
 -- =====================================================
 INSERT INTO dw.fato_locacao (
     locacao_id,
@@ -219,6 +220,7 @@ INSERT INTO dw.fato_locacao (
     atraso_devolucao_dias,
     qtd_locacoes,
     valor_cobranca,
+    valor_multa_atraso,
     status_cobranca
 )
 SELECT
@@ -237,25 +239,18 @@ SELECT
     tdr.sk_tempo AS sk_tempo_devolucao_realizada,
     l.km_entrega,
     l.km_devolucao,
-    CASE
-        WHEN l.km_entrega IS NOT NULL AND l.km_devolucao IS NOT NULL
-            THEN (l.km_devolucao - l.km_entrega)::INTEGER
-    END AS km_rodado,
-    CASE
-        WHEN l.data_retirada_prevista IS NOT NULL AND l.data_devolucao_prevista IS NOT NULL
-            THEN (l.data_devolucao_prevista - l.data_retirada_prevista + 1)::INTEGER
-    END AS dias_previstos,
-    CASE
-        WHEN l.data_retirada IS NOT NULL AND l.data_devolucao IS NOT NULL
-            THEN (l.data_devolucao - l.data_retirada + 1)::INTEGER
-    END AS dias_realizados,
-    CASE
-        WHEN l.data_devolucao IS NOT NULL AND l.data_devolucao_prevista IS NOT NULL
-            THEN (l.data_devolucao - l.data_devolucao_prevista)::INTEGER
-    END AS atraso_devolucao_dias,
+    -- Medidas consumidas DIRETAMENTE de stg.conf_locacao (já protegidas
+    -- com GREATEST e convenção de dias inclusiva). Não recalcular aqui:
+    -- recalcular das datas/km crus reintroduziria valores negativos e
+    -- divergiria da camada transform (era o bug anterior).
+    l.km_rodado,
+    l.dias_previstos,
+    l.dias_realizados,
+    l.atraso_devolucao_dias,
     1 AS qtd_locacoes,
-    l.valor_cobrado AS valor_cobranca,
-    NULL::VARCHAR(30) AS status_cobranca
+    COALESCE(cob.valor_cobranca, l.valor_cobrado) AS valor_cobranca,
+    l.valor_multa_atraso,
+    cob.status_cobranca
 FROM stg.conf_locacao l
 JOIN dw.dim_cliente c
   ON c.cliente_id = l.cliente_nk
@@ -275,6 +270,8 @@ LEFT JOIN dw.dim_tempo tdp
   ON tdp.data = l.data_devolucao_prevista
 LEFT JOIN dw.dim_tempo tdr
   ON tdr.data = l.data_devolucao
+LEFT JOIN stg.conf_cobranca cob
+  ON cob.locacao_nk = l.locacao_nk
 ON CONFLICT (locacao_id) DO UPDATE
 SET
     reserva_id = EXCLUDED.reserva_id,
@@ -297,6 +294,7 @@ SET
     atraso_devolucao_dias = EXCLUDED.atraso_devolucao_dias,
     qtd_locacoes = EXCLUDED.qtd_locacoes,
     valor_cobranca = EXCLUDED.valor_cobranca,
+    valor_multa_atraso = EXCLUDED.valor_multa_atraso,
     status_cobranca = EXCLUDED.status_cobranca;
 
 -- =====================================================
@@ -461,7 +459,9 @@ SELECT
     COUNT(*) FILTER (
         WHERE t_real.data IS NOT NULL
           AND t_prev.data IS NOT NULL
-          AND atraso_devolucao_dias <> (t_real.data - t_prev.data)
+          -- atraso é clampado em 0 (devolução antecipada não vira atraso
+          -- negativo), então compara-se contra GREATEST(diff, 0).
+          AND atraso_devolucao_dias <> GREATEST(t_real.data - t_prev.data, 0)
     ) AS locacoes_atraso_incoerente
 FROM dw.fato_locacao fl
 LEFT JOIN dw.dim_tempo t_real
@@ -534,8 +534,9 @@ ORDER BY entidade;
 --   5. Verificar se as views analiticas batem com as tabelas fato.
 --
 -- Observacao:
---   Os scripts de transform inspecionados criam tabelas conformadas no
---   schema stg com prefixo conf_*. Nao existe stg.conf_cobranca.
+--   Os scripts de transform criam tabelas conformadas no schema stg com
+--   prefixo conf_*, incluindo stg.conf_cobranca (grao por locacao), que
+--   alimenta valor_cobranca e status_cobranca de dw.fato_locacao.
 -- =====================================================
 
 -- -----------------------------------------------------
@@ -548,7 +549,14 @@ ORDER BY entidade;
 -- conferir o volume efetivamente extraido por grupo_fonte.
 -- -----------------------------------------------------
 
--- Volumes brutos esperados do grupo 1 contra staging.
+-- Volumes brutos esperados do grupo 1 contra staging (apenas tabelas de
+-- carga FULL — cliente/condutor/grupo/veiculo/patio).
+--
+-- NOTA: as tabelas incrementais (reserva, locacao, cobranca,
+-- movimentacao_patio) NÃO são reconciliadas aqui por contagem direta no
+-- OLTP. A extração usa janela baseada em stg.log_extracao (última execução
+-- OK), então recomputar o filtro aqui daria divergência. A reconciliação
+-- dessas tabelas é feita pela conferência do log logo abaixo.
 SELECT *
 FROM (
     VALUES
@@ -556,11 +564,7 @@ FROM (
         ('condutor',            (SELECT COUNT(*) FROM oltp_g1.condutor),            (SELECT COUNT(*) FROM stg.condutor WHERE grupo_fonte = 1)),
         ('grupo_veiculo',       (SELECT COUNT(*) FROM oltp_g1.grupo_veiculo),       (SELECT COUNT(*) FROM stg.grupo_veiculo WHERE grupo_fonte = 1)),
         ('veiculo',             (SELECT COUNT(*) FROM oltp_g1.veiculo),             (SELECT COUNT(*) FROM stg.veiculo WHERE grupo_fonte = 1)),
-        ('patio',               (SELECT COUNT(*) FROM oltp_g1.patio),               (SELECT COUNT(*) FROM stg.patio WHERE grupo_fonte = 1)),
-        ('reserva_extraida',    (SELECT COUNT(*) FROM oltp_g1.reserva WHERE data_inicio >= (NOW() - INTERVAL '25 hours')::DATE OR status IN ('cancelada', 'espera')), (SELECT COUNT(*) FROM stg.reserva WHERE grupo_fonte = 1)),
-        ('locacao_extraida',    (SELECT COUNT(*) FROM oltp_g1.locacao WHERE created_at >= (NOW() - INTERVAL '25 hours') OR (data_devolucao_realizada IS NULL AND data_retirada_realizada IS NOT NULL)), (SELECT COUNT(*) FROM stg.locacao WHERE grupo_fonte = 1)),
-        ('cobranca_extraida',   (SELECT COUNT(*) FROM oltp_g1.cobranca WHERE status = 'pendente' OR data_pagamento >= (NOW() - INTERVAL '25 hours')::DATE), (SELECT COUNT(*) FROM stg.cobranca WHERE grupo_fonte = 1)),
-        ('movimentacao_extraida', (SELECT COUNT(*) FROM oltp_g1.movimentacao_patio WHERE data_movimentacao >= (NOW() - INTERVAL '25 hours')), (SELECT COUNT(*) FROM stg.movimentacao_patio WHERE grupo_fonte = 1))
+        ('patio',               (SELECT COUNT(*) FROM oltp_g1.patio),               (SELECT COUNT(*) FROM stg.patio WHERE grupo_fonte = 1))
 ) AS v(entidade, qtd_oltp_esperada, qtd_staging)
 ORDER BY entidade;
 
@@ -807,9 +811,9 @@ UNION ALL
 SELECT
     'dw.fato_locacao',
     COUNT(*) FILTER (WHERE qtd_locacoes <> 1 OR qtd_locacoes IS NULL),
-    COUNT(*) FILTER (WHERE dias_previstos < 0 OR dias_realizados < 0),
+    COUNT(*) FILTER (WHERE dias_previstos < 0 OR dias_realizados < 0 OR atraso_devolucao_dias < 0),
     COUNT(*) FILTER (WHERE km_rodado < 0),
-    COUNT(*) FILTER (WHERE valor_cobranca < 0)
+    COUNT(*) FILTER (WHERE valor_cobranca < 0 OR valor_multa_atraso < 0)
 FROM dw.fato_locacao
 UNION ALL
 SELECT
