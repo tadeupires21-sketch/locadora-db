@@ -1,14 +1,14 @@
-<!--
-=========================================
-Grupo:   Tadeu Belfort Neto    - 119034813
-         Vicente Alves         - 120044148
-         João Pedro de Lacerda - 116076670
-=========================================
--->
-
 # Sistema de Locação de Veículos
 
 Projeto desenvolvido para a disciplina **Big Data (MAE016)**.
+
+## Grupo
+
+| Integrante | DRE |
+|------------|-----|
+| Tadeu Belfort Neto | 119034813 |
+| Vicente Alves | 120044148 |
+| João Pedro de Lacerda | 116076670 |
 
 O projeto tem duas partes: o banco transacional (**OLTP**) que sustenta a
 operação da locadora, e o **Data Warehouse (DW)** que consolida os dados de
