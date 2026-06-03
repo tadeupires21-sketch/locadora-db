@@ -4,7 +4,7 @@
 -- Projeto academico de Data Warehouse para locadora
 -- Grupo:
 --   Tadeu Belfort Neto              DRE 119034813
---   Vicente Alves                   DRE 1220044148
+--   Vicente Alves                   DRE 120044148
 --   João Pedro de Lacerda           DRE 116076670
 -- Este script recria o schema dw e seus objetos finais.
 -- As dimensoes sao conformadas e compartilhadas entre as fatos.

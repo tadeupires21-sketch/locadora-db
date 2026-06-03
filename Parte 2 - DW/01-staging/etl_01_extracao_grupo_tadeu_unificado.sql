@@ -1,7 +1,7 @@
 -- =====================================================
 -- Grupo:
 --   Tadeu Belfort Neto              DRE 119034813
---   Vicente Alves                   DRE 1220044148
+--   Vicente Alves                   DRE 120044148
 --   João Pedro de Lacerda           DRE 116076670
 -- Arquivo: etl_01_extracao_grupo_tadeu.sql
 -- Descrição: Extração ETL — Grupo Tadeu (fonte 1/4)

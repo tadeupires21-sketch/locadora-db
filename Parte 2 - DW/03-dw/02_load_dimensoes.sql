@@ -3,7 +3,7 @@
 -- Carga idempotente das dimensoes conformadas do DW
 -- Grupo:
 --   Tadeu Belfort Neto              DRE 119034813
---   Vicente Alves                   DRE 1220044148
+--   Vicente Alves                   DRE 120044148
 --   João Pedro de Lacerda           DRE 116076670
 -- Fonte principal: tabelas conformadas stg.conf_* geradas
 -- pelos scripts de transformacao em Parte 2 - DW/02-transform.

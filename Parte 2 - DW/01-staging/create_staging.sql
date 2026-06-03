@@ -1,7 +1,7 @@
 -- =====================================================
 -- Grupo:
 --   Tadeu Belfort Neto              DRE 119034813
---   Vicente Alves                   DRE 1220044148
+--   Vicente Alves                   DRE 120044148
 --   João Pedro de Lacerda           DRE 116076670
 -- Arquivo: staging/01_create_staging.sql
 -- Descrição: Criação da camada de staging do processo ETL.

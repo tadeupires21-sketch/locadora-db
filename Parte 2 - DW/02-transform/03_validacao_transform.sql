@@ -1,7 +1,7 @@
 -- =====================================================
 -- Grupo:
 --   Tadeu Belfort Neto              DRE 119034813
---   Vicente Alves                   DRE 1220044148
+--   Vicente Alves                   DRE 120044148
 --   João Pedro de Lacerda           DRE 116076670
 -- Validacao da camada transformada stg.conf_*
 -- Execute apos:
