@@ -1,7 +1,11 @@
 -- =====================================================
 -- Transformacao - dimensoes conformadas
 -- Projeto academico de Data Warehouse para locadora
---
+-- Grupo:
+--   Tadeu Belfort Neto              DRE 119034813
+--   Vicente Alves                   DRE 1220044148
+--   João Pedro de Lacerda           DRE 116076670
+
 -- Este script le apenas as tabelas unificadas do schema stg.
 -- O campo grupo_fonte faz parte das chaves naturais para evitar
 -- colisao entre IDs iguais vindos de bases diferentes.
@@ -27,8 +31,6 @@
 -- =====================================================
 
 SET timezone TO 'America/Sao_Paulo';
-
-CREATE SCHEMA IF NOT EXISTS stg;
 
 -- =====================================================
 -- conf_cliente

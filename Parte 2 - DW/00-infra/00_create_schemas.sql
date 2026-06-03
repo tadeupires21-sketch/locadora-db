@@ -1,35 +1,37 @@
 -- =====================================================
--- Nome: Tadeu Belfort Neto
--- DRE: 119034813
+-- Grupo:
+--   Tadeu Belfort Neto              DRE 119034813
+--   Vicente Alves                   DRE 1220044148
+--   João Pedro de Lacerda           DRE 116076670
 -- Arquivo: 00_create_schemas.sql
--- Descrição: Inicialização dos schemas do pipeline ETL.
+-- Descricao: Inicializacao dos schemas do pipeline ETL.
 --
 -- EXECUTE ESTE SCRIPT PRIMEIRO, antes de qualquer outro.
--- É seguro rodar múltiplas vezes (idempotente via IF NOT EXISTS).
+-- E seguro rodar multiplas vezes (idempotente via IF NOT EXISTS).
 --
 -- Schemas criados:
---   stg  — área de staging e conformance (dados brutos + transformados)
---   dw   — Data Warehouse dimensional (esquema estrela final)
+--   stg  - area de staging e conformance (dados brutos + transformados)
+--   dw   - Data Warehouse dimensional (esquema estrela final)
 -- =====================================================
 
--- Schema de staging: recebe dados brutos extraídos dos 4 OLTPs
--- e as tabelas conformadas geradas na etapa de transformação.
+-- Schema de staging: recebe dados brutos extraidos dos 4 OLTPs
+-- e as tabelas conformadas geradas na etapa de transformacao.
 CREATE SCHEMA IF NOT EXISTS stg;
 COMMENT ON SCHEMA stg IS
-    'Área de staging e conformance do pipeline ETL. '
-    'Contém tabelas brutas (stg.<entidade>) e conformadas (stg.conf_*). '
-    'Nunca expor diretamente a usuários de negócio.';
+    'Area de staging e conformance do pipeline ETL. '
+    'Contem tabelas brutas (stg.<entidade>) e conformadas (stg.conf_*). '
+    'Nunca expor diretamente a usuarios de negocio.';
 
--- Schema do DW: esquema estrela com dimensões e fatos finais,
--- prontos para consumo analítico e geração de relatórios.
+-- Schema do DW: esquema estrela com dimensoes e fatos finais,
+-- prontos para consumo analitico e geracao de relatorios.
 CREATE SCHEMA IF NOT EXISTS dw;
 COMMENT ON SCHEMA dw IS
-    'Data Warehouse dimensional — esquema estrela. '
-    'Contém dim_* (dimensões) e fato_* (fatos). '
-    'Fonte oficial para relatórios e dashboards.';
+    'Data Warehouse dimensional - esquema estrela. '
+    'Contem dim_* (dimensoes) e fato_* (fatos). '
+    'Fonte oficial para relatorios e dashboards.';
 
 -- =====================================================
--- Verificação (opcional): confirmar criação
+-- Verificacao (opcional): confirmar criacao
 -- =====================================================
 SELECT schema_name,
        pg_size_pretty(pg_catalog.pg_database_size(current_database())) AS db_size

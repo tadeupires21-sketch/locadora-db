@@ -1,6 +1,8 @@
 -- =====================================================
--- Nome: Tadeu Belfort Neto
--- DRE: 119034813
+-- Grupo:
+--   Tadeu Belfort Neto              DRE 119034813
+--   Vicente Alves                   DRE 1220044148
+--   João Pedro de Lacerda           DRE 116076670
 -- Arquivo: staging/01_create_staging.sql
 -- Descrição: Criação da camada de staging do processo ETL.
 --
@@ -21,13 +23,6 @@
 --      - SELECT FROM oltp_g1.*
 --      - regras de janela incremental
 -- =====================================================
-
-
--- =====================================================
--- 0. SCHEMA DE STAGING
--- =====================================================
-
-CREATE SCHEMA IF NOT EXISTS stg;
 
 
 -- =====================================================

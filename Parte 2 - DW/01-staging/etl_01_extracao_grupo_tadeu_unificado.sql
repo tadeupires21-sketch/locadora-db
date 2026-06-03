@@ -1,6 +1,8 @@
 -- =====================================================
--- Nome: Tadeu Belfort Neto
--- DRE: 119034813
+-- Grupo:
+--   Tadeu Belfort Neto              DRE 119034813
+--   Vicente Alves                   DRE 1220044148
+--   João Pedro de Lacerda           DRE 116076670
 -- Arquivo: etl_01_extracao_grupo_tadeu.sql
 -- Descrição: Extração ETL — Grupo Tadeu (fonte 1/4)
 --            Lê do OLTP transacional e carrega na
@@ -64,10 +66,10 @@ FROM oltp_g1.condutor
 -- Grupos de veículo (carga full — tabela de referência)
 TRUNCATE TABLE stg.grupo_veiculo;
 INSERT INTO stg.grupo_veiculo
-    (src_id, nome, categoria, grupo_fonte)
+    (src_id, nome, categoria, diaria, grupo_fonte)
 SELECT q.*, 1::SMALLINT AS grupo_fonte
 FROM (
-SELECT id, nome, categoria
+SELECT id, nome, categoria, diaria
 FROM oltp_g1.grupo_veiculo
 ) q;
 
@@ -223,22 +225,6 @@ WHERE data_movimentacao >= (
 --   2. Baseline incremental: o status 'OK' é usado nos WHERE das
 --      extrações seguintes para calcular a janela temporal.
 --
--- IMPORTANTE: a tabela é criada aqui com IF NOT EXISTS para que
--- exista na primeira execução. Em banco limpo, o script
--- 00-infra/00_create_schemas.sql deve ser rodado antes deste.
--- =====================================================
-CREATE TABLE IF NOT EXISTS stg.log_extracao (
-    id_log          SERIAL          PRIMARY KEY,
-    grupo_fonte     SMALLINT        NOT NULL,
-    tabela_stg      VARCHAR(60)     NOT NULL,
-    dt_extracao     TIMESTAMP       NOT NULL DEFAULT NOW(),
-    qtd_registros   INTEGER         NOT NULL,
-    -- 'OK' = extração concluída com sucesso (usado como baseline incremental)
-    -- 'ERR' = extração falhou (não deve ser usado como baseline)
-    status          VARCHAR(10)     NOT NULL DEFAULT 'OK',
-    observacao      VARCHAR(200)
-);
-
 -- Registra o resultado desta execução com status OK
 INSERT INTO stg.log_extracao (grupo_fonte, tabela_stg, qtd_registros, status)
 VALUES

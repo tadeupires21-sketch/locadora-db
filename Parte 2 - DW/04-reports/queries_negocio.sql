@@ -1,6 +1,8 @@
 -- =====================================================
--- Nome: Tadeu Belfort Neto
--- DRE: 119034813
+-- Grupo:
+--   Tadeu Belfort Neto              DRE 119034813
+--   Vicente Alves                   DRE 1220044148
+--   João Pedro de Lacerda           DRE 116076670
 -- Arquivo: queries_negocio.sql
 -- Descrição: Consultas analíticas prontas para relatórios
 --            de negócio do DW da locadora de veículos.
@@ -13,20 +15,23 @@
 -- R1. RECEITA MENSAL — evolução de faturamento
 --     Responde: "Como está nossa receita mês a mês?"
 -- =====================================================
+-- Colunas reais da view: total_locacoes, km_medio_rodado, valor_total_cobrado.
+-- A receita mensal vem de valor_total_cobrado; km_medio_rodado já é a média
+-- de km por locação calculada na view (não há km_total a dividir aqui).
 SELECT
     ano,
     mes,
     nome_mes,
     total_locacoes,
-    ROUND(receita_total, 2)                         AS receita_total,
-    ROUND(AVG(receita_total) OVER (
+    ROUND(valor_total_cobrado, 2)                   AS receita_total,
+    ROUND(AVG(valor_total_cobrado) OVER (
         ORDER BY ano, mes
         ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
     ), 2)                                           AS media_movel_3m,
-    ROUND(receita_total - LAG(receita_total) OVER (
+    ROUND(valor_total_cobrado - LAG(valor_total_cobrado) OVER (
         ORDER BY ano, mes
     ), 2)                                           AS variacao_mes_anterior,
-    ROUND(km_total_rodado / NULLIF(total_locacoes, 0), 1) AS km_medio_por_locacao
+    ROUND(km_medio_rodado, 1)                       AS km_medio_por_locacao
 FROM dw.vw_locacoes_por_mes
 ORDER BY ano, mes;
 
@@ -35,12 +40,14 @@ ORDER BY ano, mes;
 -- R2. TOP 10 CLIENTES — por receita gerada
 --     Responde: "Quem são nossos clientes mais valiosos?"
 -- =====================================================
+-- Colunas reais da view: cliente, tipo, cidade, total_reservas,
+-- total_locacoes, valor_total_cobrado.
 SELECT
-    nome_cliente,
+    cliente                                          AS nome_cliente,
     total_reservas,
     total_locacoes,
-    ROUND(valor_cobrado_total, 2) AS receita_total,
-    ROUND(valor_cobrado_total / NULLIF(total_locacoes, 0), 2) AS ticket_medio
+    ROUND(valor_total_cobrado, 2)                    AS receita_total,
+    ROUND(valor_total_cobrado / NULLIF(total_locacoes, 0), 2) AS ticket_medio
 FROM dw.vw_clientes_mais_frequentes
 WHERE total_locacoes > 0
 ORDER BY receita_total DESC
@@ -68,44 +75,46 @@ ORDER BY pct_cancelamento DESC;
 
 
 -- =====================================================
--- R4. OCUPAÇÃO DOS PÁTIOS — disponibilidade x uso
---     Responde: "Quais pátios estão mais/menos ocupados?"
+-- R4. USO DOS PÁTIOS — movimento de retiradas e devoluções
+--     Responde: "Quais pátios concentram mais operação?"
+--
+-- NOTA DE MODELAGEM: dim_patio NÃO carrega 'capacidade' (a coluna existe
+-- em stg.patio, mas não foi promovida ao DW), e não há vínculo estático
+-- veículo→pátio no modelo. Portanto não é possível calcular % de ocupação
+-- sobre capacidade. Medimos USO REAL a partir de fato_locacao: quantas
+-- locações usaram cada pátio como ponto de retirada e de devolução.
+-- (Para % de ocupação real, promover 'capacidade' a dim_patio.)
 -- =====================================================
 SELECT
     p.nome                                          AS patio,
     p.cidade,
-    p.capacidade_total,
-    COUNT(DISTINCT v.sk_veiculo)                    AS veiculos_cadastrados,
-    ROUND(
-        COUNT(DISTINCT v.sk_veiculo)::NUMERIC
-        / NULLIF(p.capacidade_total, 0) * 100,
-        1
-    )                                               AS pct_ocupacao_cadastrada
+    COUNT(*) FILTER (WHERE fl.sk_patio_retirada  = p.sk_patio) AS retiradas,
+    COUNT(*) FILTER (WHERE fl.sk_patio_devolucao = p.sk_patio) AS devolucoes,
+    COUNT(*) FILTER (WHERE fl.sk_patio_retirada  = p.sk_patio)
+    + COUNT(*) FILTER (WHERE fl.sk_patio_devolucao = p.sk_patio) AS movimento_total
 FROM dw.dim_patio p
-LEFT JOIN dw.dim_veiculo v ON v.sk_empresa = (
-    SELECT sk_empresa FROM dw.dim_empresa e
-    WHERE e.empresa_id = (
-        SELECT empresa_id FROM dw.dim_empresa WHERE sk_empresa = v.sk_empresa LIMIT 1
-    ) LIMIT 1
-)
-GROUP BY p.sk_patio, p.nome, p.cidade, p.capacidade_total
-ORDER BY pct_ocupacao_cadastrada DESC NULLS LAST;
+LEFT JOIN dw.fato_locacao fl
+       ON p.sk_patio IN (fl.sk_patio_retirada, fl.sk_patio_devolucao)
+GROUP BY p.sk_patio, p.nome, p.cidade
+ORDER BY movimento_total DESC;
 
 
 -- =====================================================
 -- R5. ATRASOS NA DEVOLUÇÃO — perfil dos infratores
 --     Responde: "Quem atrasa mais e quanto custa?"
 -- =====================================================
+-- Colunas reais da view: locacao_id, cliente, veiculo (placa+marca+modelo),
+-- patio_devolucao, data_prevista, data_realizada, atraso_em_dias.
+-- A view não expõe valor cobrado; ordenamos apenas pelo atraso.
 SELECT
-    nome_cliente,
-    placa_veiculo,
-    nome_patio_devolucao,
-    data_devolucao_prevista,
-    data_devolucao_realizada,
-    atraso_dias,
-    ROUND(valor_cobrado, 2) AS valor_cobrado
+    cliente                 AS nome_cliente,
+    veiculo,
+    patio_devolucao,
+    data_prevista,
+    data_realizada,
+    atraso_em_dias
 FROM dw.vw_atrasos_devolucao
-ORDER BY atraso_dias DESC, valor_cobrado DESC
+ORDER BY atraso_em_dias DESC
 LIMIT 20;
 
 
@@ -113,11 +122,13 @@ LIMIT 20;
 -- R6. MOVIMENTAÇÃO ENTRE PÁTIOS — matriz de fluxo
 --     Responde: "Qual o fluxo de veículos entre pátios?"
 -- =====================================================
+-- Coluna real da view: percentual_transicao_origem (% das saídas de cada
+-- pátio de origem que vão para cada destino — soma 100% por origem).
 SELECT
     origem,
     destino,
     total_movimentacoes,
-    ROUND(pct_saidas_da_origem, 1)  AS pct_do_total_de_saidas
+    ROUND(percentual_transicao_origem, 1)  AS pct_do_total_de_saidas
 FROM dw.vw_matriz_transicao_patios
 ORDER BY total_movimentacoes DESC;
 

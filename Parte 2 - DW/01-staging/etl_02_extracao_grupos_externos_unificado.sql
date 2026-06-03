@@ -1,6 +1,8 @@
 -- =====================================================
--- Nome: Tadeu Belfort Neto
--- DRE: 119034813
+-- Grupo:
+--   Tadeu Belfort Neto              DRE 119034813
+--   Vicente Alves                   DRE 1220044148
+--   João Pedro de Lacerda           DRE 116076670
 -- Arquivo: etl_02_extracao_grupos_externos.sql
 -- Descrição: Extração ETL — Grupos 2, 3 e 4 (fontes externas)
 --            Lê dos OLTPs das outras empresas e carrega

@@ -2,7 +2,10 @@
 -- 01_create_dw.sql
 -- Camada final do Data Warehouse - esquema estrela
 -- Projeto academico de Data Warehouse para locadora
---
+-- Grupo:
+--   Tadeu Belfort Neto              DRE 119034813
+--   Vicente Alves                   DRE 1220044148
+--   João Pedro de Lacerda           DRE 116076670
 -- Este script recria o schema dw e seus objetos finais.
 -- As dimensoes sao conformadas e compartilhadas entre as fatos.
 --
@@ -31,7 +34,7 @@
 BEGIN;
 
 DROP SCHEMA IF EXISTS dw CASCADE;
-CREATE SCHEMA IF NOT EXISTS dw;
+CREATE SCHEMA dw;
 
 -- =====================================================
 -- Dimensao de tempo

@@ -1,7 +1,10 @@
 -- =====================================================
 -- Transformacao - fatos conformadas
 -- Projeto academico de Data Warehouse para locadora
---
+-- Grupo:
+--   Tadeu Belfort Neto              DRE 119034813
+--   Vicente Alves                   DRE 1220044148
+--   João Pedro de Lacerda           DRE 116076670
 -- Este script depende das dimensoes geradas em:
 -- transform/01_transform_dimensoes.sql
 --
@@ -267,6 +270,8 @@ SELECT
     n.data_retirada,
     n.data_devolucao_prevista,
     n.data_devolucao,
+    n.km_entrega,
+    n.km_devolucao,
     TO_CHAR(n.data_registro, 'YYYYMMDD')::INTEGER AS id_data_registro,
     CASE WHEN n.data_retirada IS NOT NULL THEN TO_CHAR(n.data_retirada, 'YYYYMMDD')::INTEGER END AS id_data_retirada,
     CASE WHEN n.data_devolucao IS NOT NULL THEN TO_CHAR(n.data_devolucao, 'YYYYMMDD')::INTEGER END AS id_data_devolucao,

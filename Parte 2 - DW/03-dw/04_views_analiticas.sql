@@ -1,6 +1,10 @@
 -- =====================================================
 -- 04_views_analiticas.sql
 -- Views analiticas para relatorios finais
+-- Grupo:
+--   Tadeu Belfort Neto              DRE 119034813
+--   Vicente Alves                   DRE 1220044148
+--   João Pedro de Lacerda           DRE 116076670
 -- =====================================================
 
 DROP VIEW IF EXISTS dw.vw_atrasos_devolucao;
