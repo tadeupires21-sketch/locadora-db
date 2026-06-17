@@ -29,7 +29,26 @@
 --
 -- Transação: todo o create roda em BEGIN/COMMIT para que a recriação
 --     seja atômica (se algo falhar no meio, nada fica pela metade).
+--
+-- GUARD DE EXECUÇÃO: como o DROP SCHEMA abaixo é irreversível, este
+--     script exige a variável psql `rebuild_confirmado` para rodar.
+--     O orquestrador (run_pipeline.ps1) só a define no setup inicial ou
+--     sob a flag -RecreateDW. Execução manual acidental
+--     (`psql -f 01_create_dw.sql`) aborta SEM apagar nada.
+--     Para rodar manualmente de propósito:
+--         psql -v rebuild_confirmado=1 -f 03-dw/01_create_dw.sql
 -- =====================================================
+
+\set ON_ERROR_STOP on
+
+\if :{?rebuild_confirmado}
+\else
+    \echo '*** ABORTADO: 01_create_dw.sql e DESTRUTIVO (DROP SCHEMA dw CASCADE). ***'
+    \echo '*** O schema dw NAO foi alterado. ***'
+    \echo '*** Rode via:  run_pipeline.ps1 -RecreateDW ***'
+    \echo '*** ou manualmente:  psql -v rebuild_confirmado=1 -f 03-dw/01_create_dw.sql ***'
+    \quit
+\endif
 
 BEGIN;
 
