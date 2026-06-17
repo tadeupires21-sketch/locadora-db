@@ -201,17 +201,20 @@ SET
 INSERT INTO dw.dim_patio (
     patio_id,
     nome,
-    cidade
+    cidade,
+    capacidade
 )
 SELECT
     patio_nk AS patio_id,
     nome,
-    cidade
+    cidade,
+    capacidade
 FROM stg.conf_patio
 ON CONFLICT (patio_id) DO UPDATE
 SET
     nome = EXCLUDED.nome,
-    cidade = EXCLUDED.cidade;
+    cidade = EXCLUDED.cidade,
+    capacidade = EXCLUDED.capacidade;
 
 -- =====================================================
 -- Validacao bloqueante antes da carga de dim_veiculo.

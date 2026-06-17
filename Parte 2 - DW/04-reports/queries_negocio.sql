@@ -75,27 +75,41 @@ ORDER BY pct_cancelamento DESC;
 
 
 -- =====================================================
--- R4. USO DOS PÁTIOS — movimento de retiradas e devoluções
---     Responde: "Quais pátios concentram mais operação?"
+-- R4. USO DOS PÁTIOS — movimento e giro por vaga
+--     Responde: "Quais pátios concentram mais operação e qual a pressão
+--     sobre a capacidade instalada?"
 --
--- NOTA DE MODELAGEM: dim_patio NÃO carrega 'capacidade' (a coluna existe
--- em stg.patio, mas não foi promovida ao DW), e não há vínculo estático
--- veículo→pátio no modelo. Portanto não é possível calcular % de ocupação
--- sobre capacidade. Medimos USO REAL a partir de fato_locacao: quantas
--- locações usaram cada pátio como ponto de retirada e de devolução.
--- (Para % de ocupação real, promover 'capacidade' a dim_patio.)
+-- NOTA DE MODELAGEM: dim_patio agora carrega 'capacidade' (nº de vagas).
+-- O modelo é baseado em MOVIMENTAÇÃO (eventos de locação), não em snapshot
+-- instantâneo, então não há "% de ocupação em um dado momento". Medimos:
+--   • USO REAL: locações que usaram cada pátio como retirada/devolução;
+--   • GIRO POR VAGA = movimento_total / capacidade (eventos por vaga),
+--     indicador de pressão sobre a estrutura. capacidade não informada
+--     pela fonte chega como 0 e é tratada como NULL (evita divisão por
+--     zero e não infla o giro de pátios sem capacidade conhecida).
 -- =====================================================
+WITH uso_patio AS (
+    SELECT
+        p.sk_patio,
+        p.nome,
+        p.cidade,
+        NULLIF(p.capacidade, 0) AS capacidade_vagas,
+        COUNT(*) FILTER (WHERE fl.sk_patio_retirada  = p.sk_patio) AS retiradas,
+        COUNT(*) FILTER (WHERE fl.sk_patio_devolucao = p.sk_patio) AS devolucoes
+    FROM dw.dim_patio p
+    LEFT JOIN dw.fato_locacao fl
+           ON p.sk_patio IN (fl.sk_patio_retirada, fl.sk_patio_devolucao)
+    GROUP BY p.sk_patio, p.nome, p.cidade, p.capacidade
+)
 SELECT
-    p.nome                                          AS patio,
-    p.cidade,
-    COUNT(*) FILTER (WHERE fl.sk_patio_retirada  = p.sk_patio) AS retiradas,
-    COUNT(*) FILTER (WHERE fl.sk_patio_devolucao = p.sk_patio) AS devolucoes,
-    COUNT(*) FILTER (WHERE fl.sk_patio_retirada  = p.sk_patio)
-    + COUNT(*) FILTER (WHERE fl.sk_patio_devolucao = p.sk_patio) AS movimento_total
-FROM dw.dim_patio p
-LEFT JOIN dw.fato_locacao fl
-       ON p.sk_patio IN (fl.sk_patio_retirada, fl.sk_patio_devolucao)
-GROUP BY p.sk_patio, p.nome, p.cidade
+    nome                         AS patio,
+    cidade,
+    capacidade_vagas,
+    retiradas,
+    devolucoes,
+    retiradas + devolucoes       AS movimento_total,
+    ROUND((retiradas + devolucoes)::NUMERIC / capacidade_vagas, 2) AS giro_por_vaga
+FROM uso_patio
 ORDER BY movimento_total DESC;
 
 

@@ -162,6 +162,10 @@ CREATE TABLE dw.dim_patio (
     patio_id   TEXT NOT NULL,
     nome       TEXT NOT NULL,
     cidade     TEXT,
+    -- Capacidade (numero de vagas) do patio. Habilita % de ocupacao real
+    -- nos relatorios (uso vs. capacidade). Vem de stg.conf_patio, que ja
+    -- imputa 0 quando a fonte nao informa.
+    capacidade INTEGER,
 
     CONSTRAINT pk_dim_patio PRIMARY KEY (sk_patio),
     CONSTRAINT uq_dim_patio_patio_id UNIQUE (patio_id)
