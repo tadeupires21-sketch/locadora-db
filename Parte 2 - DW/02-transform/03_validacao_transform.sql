@@ -23,7 +23,6 @@ FROM (
         ('conf_reserva',              (SELECT COUNT(*) FROM stg.conf_reserva)),
         ('conf_locacao',              (SELECT COUNT(*) FROM stg.conf_locacao)),
         ('conf_cobranca',             (SELECT COUNT(*) FROM stg.conf_cobranca)),
-        ('conf_veiculo_no_patio',     (SELECT COUNT(*) FROM stg.conf_veiculo_no_patio)),
         ('conf_movimentacao_patio',   (SELECT COUNT(*) FROM stg.conf_movimentacao_patio))
 ) AS v(tabela, qtd_registros)
 ORDER BY tabela;
@@ -67,11 +66,6 @@ ORDER BY grupo_fonte;
 
 SELECT 'conf_locacao' AS tabela, grupo_fonte, COUNT(*) AS qtd
 FROM stg.conf_locacao
-GROUP BY grupo_fonte
-ORDER BY grupo_fonte;
-
-SELECT 'conf_veiculo_no_patio' AS tabela, grupo_fonte, COUNT(*) AS qtd
-FROM stg.conf_veiculo_no_patio
 GROUP BY grupo_fonte
 ORDER BY grupo_fonte;
 

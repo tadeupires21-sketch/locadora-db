@@ -12,8 +12,7 @@
 --   stg.conf_tempo, stg.conf_cliente, stg.conf_condutor,
 --   stg.conf_grupo_veiculo, stg.conf_empresa, stg.conf_patio,
 --   stg.conf_veiculo, stg.conf_reserva, stg.conf_locacao,
---   stg.conf_cobranca, stg.conf_veiculo_no_patio,
---   stg.conf_movimentacao_patio.
+--   stg.conf_cobranca, stg.conf_movimentacao_patio.
 -- =====================================================
 
 BEGIN;
