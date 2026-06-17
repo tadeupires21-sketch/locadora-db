@@ -61,7 +61,7 @@ RETURNS TEXT LANGUAGE sql IMMUTABLE AS $$
         WHEN LOWER(COALESCE(p_status, '')) LIKE '%cancel%' THEN 'cancelada'
         WHEN LOWER(COALESCE(p_status, '')) LIKE '%pag%'    THEN 'pago'
         WHEN LOWER(COALESCE(p_status, '')) LIKE '%quit%'   THEN 'pago'
-        ELSE COALESCE(NULLIF(LOWER(TRIM(p_status)), ''), 'desconhecido')
+        ELSE 'desconhecido'   -- não propaga texto cru fora do domínio (igual às irmãs)
     END;
 $$;
 
