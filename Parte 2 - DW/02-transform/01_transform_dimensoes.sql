@@ -30,7 +30,14 @@
 --   existe, assume-se que todas as fontes já estão em horário de Brasília.
 -- =====================================================
 
+\set ON_ERROR_STOP on
 SET timezone TO 'America/Sao_Paulo';
+
+-- Transação única: o conjunto DROP+CREATE de todas as conf_* roda como
+-- uma só unidade. DDL é transacional no PostgreSQL, então se qualquer
+-- etapa falhar o ROLLBACK preserva as tabelas conformadas da execução
+-- anterior — evita deixar a camada com tabelas dropadas e não recriadas.
+BEGIN;
 
 -- =====================================================
 -- conf_cliente
@@ -451,3 +458,5 @@ SELECT
 FROM datas
 WHERE data IS NOT NULL
 ORDER BY data;
+
+COMMIT;

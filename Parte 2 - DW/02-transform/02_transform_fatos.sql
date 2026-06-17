@@ -12,6 +12,7 @@
 -- (ver nota completa em 01_transform_dimensoes.sql).
 -- =====================================================
 
+\set ON_ERROR_STOP on
 SET timezone TO 'America/Sao_Paulo';
 
 -- =====================================================
@@ -67,6 +68,12 @@ END $$;
 
 -- (schema stg já criado em 00-infra/00_create_schemas.sql e
 --  01_transform_dimensoes.sql; não recriar aqui.)
+
+-- Transação única: o conjunto DROP+CREATE de todos os fatos conformados
+-- roda atômico. Se qualquer etapa falhar, o ROLLBACK preserva as conf_*
+-- da execução anterior em vez de deixar tabelas dropadas e não recriadas.
+-- A pré-validação acima fica fora da transação por ser só leitura (WARNINGs).
+BEGIN;
 
 -- =====================================================
 -- conf_reserva
@@ -436,3 +443,5 @@ LEFT JOIN stg.conf_patio po
        ON po.patio_nk = n.patio_origem_nk
 LEFT JOIN stg.conf_patio pd
        ON pd.patio_nk = n.patio_destino_nk;
+
+COMMIT;
