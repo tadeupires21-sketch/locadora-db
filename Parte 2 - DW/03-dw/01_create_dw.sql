@@ -279,6 +279,10 @@ CREATE TABLE dw.fato_locacao (
     -- Multa por atraso (regra de negócio calculada em stg.conf_locacao):
     -- valor cobrado na origem ou estimado por dias_atraso × diária do grupo.
     valor_multa_atraso              NUMERIC(12,2),
+    -- TRUE quando a multa foi ESTIMADA (fonte não trouxe valor_atraso).
+    -- Permite auditar o "zero não calculável" (diária desconhecida):
+    --   WHERE flag_multa_estimada AND valor_multa_atraso = 0 AND atraso_devolucao_dias > 0
+    flag_multa_estimada             BOOLEAN,
     status_cobranca                 VARCHAR(30),
 
     CONSTRAINT pk_fato_locacao PRIMARY KEY (sk_fato_locacao),

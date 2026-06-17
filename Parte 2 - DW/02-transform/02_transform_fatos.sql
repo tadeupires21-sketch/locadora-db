@@ -312,6 +312,12 @@ SELECT
     -- Assim a medida fica comparável entre os 4 grupos.
     -- =================================================================
     stg.fn_multa_atraso(n.valor_atraso, n.data_devolucao, n.data_devolucao_prevista, g.diaria) AS valor_multa_atraso,
+    -- Flag de imputação da multa: TRUE quando o valor NÃO veio da fonte
+    -- (valor_atraso ausente/zero) e portanto foi ESTIMADO via dias×diária.
+    -- Espelha o NULLIF(valor_atraso,0) usado dentro de fn_multa_atraso.
+    -- Auditoria do "zero não calculável" (atraso real mas diária desconhecida):
+    --   WHERE flag_multa_estimada AND valor_multa_atraso = 0 AND atraso_devolucao_dias > 0
+    (NULLIF(n.valor_atraso, 0) IS NULL) AS flag_multa_estimada,
     (n.src_reserva_id IS NOT NULL) AS reserva_previa,
     n.status,
     n.estado_entrega,

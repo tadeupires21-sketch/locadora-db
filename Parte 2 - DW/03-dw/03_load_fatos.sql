@@ -224,6 +224,7 @@ INSERT INTO dw.fato_locacao (
     qtd_locacoes,
     valor_cobranca,
     valor_multa_atraso,
+    flag_multa_estimada,
     status_cobranca
 )
 SELECT
@@ -253,6 +254,7 @@ SELECT
     1 AS qtd_locacoes,
     COALESCE(cob.valor_cobranca, l.valor_cobrado) AS valor_cobranca,
     l.valor_multa_atraso,
+    l.flag_multa_estimada,
     cob.status_cobranca
 FROM stg.conf_locacao l
 JOIN dw.dim_cliente c
@@ -298,6 +300,7 @@ SET
     qtd_locacoes = EXCLUDED.qtd_locacoes,
     valor_cobranca = EXCLUDED.valor_cobranca,
     valor_multa_atraso = EXCLUDED.valor_multa_atraso,
+    flag_multa_estimada = EXCLUDED.flag_multa_estimada,
     status_cobranca = EXCLUDED.status_cobranca;
 
 -- =====================================================
