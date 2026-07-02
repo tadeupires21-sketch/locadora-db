@@ -655,10 +655,14 @@
     <tr><th>Sigla</th><th>Significado</th></tr>
     <tr><td class="k">ACID</td><td>Atomicidade, Consistência, Isolamento e Durabilidade — garantias de integridade de uma transação de banco de dados.</td></tr>
     <tr><td class="k">API</td><td>Application Programming Interface — interface de programação que permite a integração entre sistemas.</td></tr>
+    <tr><td class="k">AWS</td><td>Amazon Web Services — provedor de computação em nuvem da Amazon.</td></tr>
     <tr><td class="k">BI</td><td>Business Intelligence — ferramentas de análise e relatórios sobre dados do negócio.</td></tr>
     <tr><td class="k">DW</td><td>Data Warehouse — repositório analítico que consolida dados de várias fontes em modelo dimensional.</td></tr>
     <tr><td class="k">GPS</td><td>Global Positioning System — sistema de posicionamento por satélite.</td></tr>
+    <tr><td class="k">HTTP</td><td>Hypertext Transfer Protocol — protocolo de comunicação da web, base das APIs REST.</td></tr>
+    <tr><td class="k">IA</td><td>Inteligência Artificial — sistemas computacionais capazes de tarefas que exigiriam inteligência humana.</td></tr>
     <tr><td class="k">IAM</td><td>Identity and Access Management — gestão de identidade e controle de acesso na nuvem.</td></tr>
+    <tr><td class="k">KB / MB / GB / TB</td><td>Quilobyte, megabyte, gigabyte e terabyte — unidades de volume de dados (cada uma ~1.000× a anterior).</td></tr>
     <tr><td class="k">LGPD</td><td>Lei Geral de Proteção de Dados (Lei nº 13.709/2018) — legislação brasileira de privacidade.</td></tr>
     <tr><td class="k">LLM</td><td>Large Language Model — modelo de linguagem de grande porte (base dos assistentes de IA).</td></tr>
     <tr><td class="k">ML</td><td>Machine Learning — aprendizado de máquina; modelos que aprendem padrões a partir de dados.</td></tr>
@@ -669,6 +673,7 @@
     <tr><td class="k">RAG</td><td>Retrieval-Augmented Generation — técnica que ancora as respostas de um LLM em uma base de dados real.</td></tr>
     <tr><td class="k">REST</td><td>Representational State Transfer — padrão de comunicação de APIs sobre HTTP.</td></tr>
     <tr><td class="k">ROI</td><td>Return on Investment — retorno sobre o investimento.</td></tr>
+    <tr><td class="k">SQL</td><td>Structured Query Language — linguagem padrão de consulta a bancos de dados relacionais.</td></tr>
     <tr><td class="k">STT / TTS</td><td>Speech-to-Text (reconhecimento de fala) / Text-to-Speech (síntese de voz).</td></tr>
     <tr><td class="k">TCO</td><td>Total Cost of Ownership — custo total de propriedade (aquisição + operação + manutenção).</td></tr>
     <tr><td class="k">TTL</td><td>Time to Live — tempo de vida de um dado, após o qual ele expira automaticamente.</td></tr>
@@ -681,16 +686,21 @@
     <tr><td class="k">Arquitetura Kappa / Lambda</td><td>Padrões de referência para Big Data: a Lambda mantém caminhos separados de batch e stream; a Kappa trata tudo como fluxo único (Seção 8).</td></tr>
     <tr><td class="k">Arquitetura medalhão</td><td>Organização do lakehouse em camadas Bronze (bruto) → Silver (curado) → Gold (pronto para consumo).</td></tr>
     <tr><td class="k">Batch / Streaming</td><td>Processamento em lote (agendado, sobre dados acumulados) / processamento contínuo do fluxo à medida que os dados chegam.</td></tr>
+    <tr><td class="k">Broker</td><td>Servidor do cluster Kafka que armazena e distribui as mensagens; a replicação entre brokers dá a tolerância a falhas.</td></tr>
     <tr><td class="k">Caminho quente / frio</td><td>Trajetos separados para dados urgentes (emergências) e dados de rotina (telemetria), cada um dimensionado ao seu custo.</td></tr>
     <tr><td class="k">Capex / Opex</td><td>Despesa de capital (compra de ativos, ex.: servidores) / despesa operacional (pagamento pelo uso, ex.: nuvem).</td></tr>
     <tr><td class="k">Downsampling</td><td>Redução da resolução do histórico antigo (ex.: de 1 leitura/s para 1/min) para economizar armazenamento.</td></tr>
     <tr><td class="k">Edge computing</td><td>Computação na borda — processar os dados no próprio dispositivo (o computador de bordo) antes de enviá-los à nuvem.</td></tr>
+    <tr><td class="k">Event-driven</td><td>Orientado a eventos: a transmissão só acontece quando um gatilho ocorre (ex.: o vídeo de emergência), e não continuamente.</td></tr>
+    <tr><td class="k">Hot / Warm / Cold</td><td>Camadas de armazenamento por temperatura do dado: quente (acesso imediato, mais caro), morno e frio (histórico, mais barato).</td></tr>
     <tr><td class="k">Instâncias spot</td><td>Capacidade ociosa da nuvem vendida com grande desconto, ideal para cargas interrompíveis como o batch.</td></tr>
     <tr><td class="k">Lakehouse</td><td>Arquitetura que une o custo baixo do data lake às garantias transacionais do data warehouse (ex.: Delta Lake).</td></tr>
+    <tr><td class="k">Micro-batch</td><td>Modo do Spark Structured Streaming que processa o fluxo em pequenos lotes contínuos, com latência de segundos.</td></tr>
     <tr><td class="k">Payload</td><td>Conteúdo útil de uma mensagem transmitida pela rede.</td></tr>
     <tr><td class="k">Replay</td><td>Releitura do histórico retido no Kafka para reprocessar dados sem uma fonte adicional.</td></tr>
     <tr><td class="k">Right-sizing</td><td>Dimensionar cada componente para a escala real do problema — nem falta, nem excesso.</td></tr>
     <tr><td class="k">Telemetria</td><td>Medição remota: os dados de sensores que o veículo transmite (posição, velocidade, estado do motor etc.).</td></tr>
+    <tr><td class="k">Tópico / Partição (Kafka)</td><td>Tópico é o canal nomeado onde as mensagens são publicadas; partição é a subdivisão que dá paralelismo e preserva a ordem por chave (aqui, por veículo).</td></tr>
   </table>
 
   <p class="repo">Repositório do projeto: <b>github.com/tadeupires21-sketch/locadora-db</b></p>
