@@ -36,10 +36,10 @@ Parte 1 - OLTP/docs/descricao.md
 Parte 1 - OLTP/docs/descricao_completa.md
 
 # ---- Parte 2 - DW: fora tudo que não é SQL das pastas 00..04 ----
+# (docs/ passou a ser entregue na Parte 3: relatórios e apresentação)
 _deprecated/
 Parte 2 - DW/_deprecated/
 Parte 2 - DW/04-tests/
-Parte 2 - DW/docs/
 Parte 2 - DW/diagrams/
 Parte 2 - DW/run_pipeline.ps1
 
