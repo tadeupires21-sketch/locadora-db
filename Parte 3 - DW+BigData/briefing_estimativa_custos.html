@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Briefing — Estimativa de Custos Cloud vs On-Premise (Parte 3)</title>
+<style>
+  :root{
+    --ink:#1f2937; --soft:#64748b; --line:#cbd5e1; --bg:#f8fafc;
+    --cloud:#2563eb; --onprem:#dc2626; --accent:#0369a1; --ok:#15803d; --okbg:#ecfdf5;
+    --warn:#b45309; --warnbg:#fffbeb;
+  }
+  *{box-sizing:border-box}
+  body{font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);
+       margin:0;padding:30px 36px;background:#fff;line-height:1.45}
+  h1{font-size:20px;margin:0 0 2px}
+  h2{font-size:13px;margin:22px 0 9px;text-transform:uppercase;letter-spacing:.5px;
+     color:var(--soft);border-bottom:1px solid var(--line);padding-bottom:5px}
+  .sub{color:var(--soft);font-size:12.5px;margin:0 0 2px}
+  .meta{font-size:11.5px;color:var(--soft);margin-bottom:14px}
+
+  .goal{background:var(--okbg);border:1px solid #a7f3d0;border-radius:10px;padding:11px 14px;
+        font-size:12px;color:#065f46;margin-bottom:18px}
+  .goal b{color:var(--ok)}
+
+  table{width:100%;border-collapse:collapse;margin-top:6px;font-size:11.5px}
+  th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#f1f5f9;color:var(--soft);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px}
+  td.k{font-weight:700;white-space:nowrap}
+  .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tr.base{background:#eff6ff}
+  caption{caption-side:top;text-align:left;font-size:11px;color:var(--soft);margin-bottom:4px}
+
+  .two{display:flex;gap:14px;margin-top:6px}
+  .col{flex:1;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .col .ch{padding:8px 12px;font-weight:700;font-size:12px;color:#fff}
+  .col.cloud .ch{background:var(--cloud)} .col.onprem .ch{background:var(--onprem)}
+  .col ul{margin:0;padding:10px 12px 11px 26px}
+  .col li{font-size:11px;margin-bottom:5px;line-height:1.3}
+  .col li b{font-weight:700}
+
+  .deliver{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 14px;
+           font-size:11.8px;margin-top:6px}
+  .deliver ol{margin:6px 0 0;padding-left:18px}
+  .deliver li{margin-bottom:4px}
+
+  .assume{font-size:11.5px;color:#374151}
+  .assume li{margin-bottom:4px}
+  .warn{background:var(--warnbg);border:1px solid #fde68a;border-radius:9px;padding:9px 13px;
+        font-size:11.3px;color:#92400e;margin-top:10px}
+  .warn b{color:var(--warn)}
+  .note{font-size:11px;color:var(--soft);margin-top:14px;border-top:1px solid var(--line);padding-top:9px}
+  @media print{ body{padding:13px 15px} table,.two{break-inside:avoid} }
+  @page{size:A4 portrait;margin:11mm}
+</style>
+</head>
+<body>
+
+<h1>Briefing — Estimativa de Custos: Cloud vs On-Premise</h1>
+<p class="sub">Proposta Executiva DW + Big Data · Consórcio de locadoras (escala de cidade) · Parte 3</p>
+<p class="meta">Insumo para dimensionamento · base para fechar a Decisão 5 (onde roda a solução)</p>
+
+<div class="goal">
+  <b>Objetivo do exercício:</b> produzir uma comparação de custo <b>cloud vs on-premise</b> (mensal + amortizado)
+  que sirva de evidência para a Proposta Executiva. O cliente tem <b>restrição orçamentária e busca ROI rápido</b>,
+  então a métrica que decide é <b>custo total de propriedade (TCO)</b>, não pico de performance. Rodar 2–3 cenários de frota.
+</div>
+
+<h2>1 · Premissas de dimensionamento</h2>
+<table>
+  <caption>Linha em azul = baseline. Números derivados já calculados para ancorar a estimativa.</caption>
+  <tr><th>Cenário (frota ativa)</th><th class="num">Pico de msgs</th><th class="num">Vazão de ingestão</th>
+      <th class="num">Ingestão bruta/dia</th><th class="num">Ingestão bruta/mês</th></tr>
+  <tr><td class="k">1.000 veículos</td><td class="num">~1.000 msg/s</td><td class="num">~1,5 MB/s</td>
+      <td class="num">~65 GB</td><td class="num">~1,9 TB</td></tr>
+  <tr class="base"><td class="k">2.000 veículos (baseline)</td><td class="num">~2.000 msg/s</td><td class="num">~3 MB/s</td>
+      <td class="num">~130 GB</td><td class="num">~3,9 TB</td></tr>
+  <tr><td class="k">5.000 veículos</td><td class="num">~5.000 msg/s</td><td class="num">~7,5 MB/s</td>
+      <td class="num">~325 GB</td><td class="num">~9,7 TB</td></tr>
+</table>
+
+<table style="margin-top:14px">
+  <tr><th>Parâmetro fixo</th><th>Valor assumido</th></tr>
+  <tr><td class="k">Telemetria de rotina</td><td>1 mensagem/s por veículo ativo · payload comprimido <b>1–2 KB</b> (não-vídeo)</td></tr>
+  <tr><td class="k">Janela ativa</td><td>~12 h/dia em média por veículo</td></tr>
+  <tr><td class="k">Dados emergenciais (vídeo)</td><td>Event-driven, raro. Clipe só no gatilho (ex.: 5 min antes/depois). Estimar <b>N emergências/dia × tamanho do clipe</b> — é o item mais incerto, propor faixa.</td></tr>
+  <tr><td class="k">Retenção em camadas</td><td><b>Hot</b> (dias, Redis) → <b>Warm</b> (meses, Cassandra/Mongo) → <b>Cold</b> (anos, object storage/Delta). TTL e downsampling no telemetria bruto reduzem muito o frio.</td></tr>
+  <tr><td class="k">Compute</td><td>Streaming sempre-ligado (cluster pequeno) + batch noturno (instâncias spot) + ML pontual (não 24/7)</td></tr>
+  <tr><td class="k">DW (Parte 2)</td><td>PostgreSQL existente, volume modesto — na cloud vira Postgres gerenciado (RDS/Cloud SQL)</td></tr>
+</table>
+
+<h2>2 · Linhas de custo a comparar</h2>
+<div class="two">
+  <div class="col cloud">
+    <div class="ch">☁ Cloud (opex)</div>
+    <ul>
+      <li><b>Ingestão:</b> Kafka gerenciado vs self-host em VM</li>
+      <li><b>Storage em camadas:</b> GB/mês hot/warm/cold</li>
+      <li><b>Compute:</b> streaming 24/7 vs batch spot</li>
+      <li><b>Egress:</b> dado que sai da cloud (costuma surpreender)</li>
+      <li><b>NoSQL gerenciado:</b> Atlas / Astra / Redis Cloud</li>
+      <li><b>DW gerenciado:</b> Postgres RDS/Cloud SQL</li>
+    </ul>
+  </div>
+  <div class="col onprem">
+    <div class="ch">🖥 On-premise (capex + opex)</div>
+    <ul>
+      <li><b>Hardware:</b> servidores/storage (amortizar em 3–5 anos)</li>
+      <li><b>Energia + rack + refrigeração</b></li>
+      <li><b>Pessoal de operação</b> (o maior custo escondido)</li>
+      <li><b>Redundância/backup</b> para tolerância a falha</li>
+      <li><b>Sincronização</b> cloud↔on-prem (se híbrido)</li>
+      <li><b>Licenças</b> — evitáveis com stack open-source</li>
+    </ul>
+  </div>
+</div>
+
+<h2>3 · O que entregar de volta</h2>
+<div class="deliver">
+  <ol>
+    <li>Tabela <b>cloud vs on-prem</b> com custo mensal por linha, para os 2–3 cenários de frota.</li>
+    <li>On-prem <b>amortizado</b> (capex diluído em 36–60 meses) para comparar maçã com maçã contra o opex da cloud.</li>
+    <li>Provedor de referência usado (AWS/GCP/Azure) e se o preço é self-host em VM ou serviço gerenciado.</li>
+    <li>Uma linha de <b>recomendação</b>: qual ganha em TCO sob a premissa de orçamento apertado + ROI rápido.</li>
+  </ol>
+</div>
+
+<div class="warn">
+  <b>Premissas a confirmar antes de rodar:</b> (a) tamanho de frota dos cenários; (b) frequência e tamanho dos clipes de
+  emergência (item mais sensível); (c) janela de retenção do cold storage (1, 3, 5 anos?); (d) se a comparação on-prem
+  pressupõe um data center já existente ou compra do zero. Ajuste qualquer um e re-rode.
+</div>
+
+<p class="note">
+  Contexto: a inclinação inicial era híbrido, mas estava ancorada num requisito de sigilo que veio do escopo genérico,
+  não do enunciado real — que torna o on-prem <i>opcional</i>. Sob a premissa de custo, single-cloud é o candidato mais forte;
+  esta estimativa serve para confirmar (ou refutar) com número. Decisão 5 fica aberta até os resultados.
+</p>
+
+</body>
+</html>

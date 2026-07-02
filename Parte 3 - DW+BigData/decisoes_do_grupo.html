@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Decisões do Grupo — Proposta Executiva Big Data (Parte 3)</title>
+<style>
+  :root{
+    --ink:#1f2937; --soft:#64748b; --line:#cbd5e1; --bg:#f8fafc;
+    --rec:#15803d; --recbg:#ecfdf5; --warn:#b45309; --warnbg:#fffbeb;
+    --a:#1e40af; --b:#9d174d; --accent:#0369a1;
+  }
+  *{box-sizing:border-box}
+  body{font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);
+       margin:0;padding:30px 36px;background:#fff;line-height:1.45}
+  h1{font-size:20px;margin:0 0 2px}
+  .sub{color:var(--soft);font-size:12.5px;margin:0 0 2px}
+  .meta{font-size:11.5px;color:var(--soft);margin-bottom:14px}
+  .intro{background:var(--bg);border:1px solid var(--line);border-radius:10px;
+         padding:11px 14px;font-size:12px;color:#374151;margin-bottom:20px}
+  .intro b{color:var(--ink)}
+
+  .card{border:1px solid var(--line);border-radius:12px;padding:0;margin-bottom:18px;overflow:hidden;
+        break-inside:avoid}
+  .card .head{display:flex;align-items:center;gap:11px;padding:12px 16px;background:#f1f5f9;
+              border-bottom:1px solid var(--line)}
+  .card .head .num{background:var(--a);color:#fff;border-radius:8px;width:26px;height:26px;flex:none;
+                   display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+  .card .head .q{font-weight:700;font-size:14px}
+  .card .head .tag{margin-left:auto;font-size:10px;font-weight:700;text-transform:uppercase;
+                   letter-spacing:.4px;padding:3px 9px;border-radius:20px;background:#e2e8f0;color:var(--soft)}
+  .card .head .tag.block{background:#fee2e2;color:#b91c1c}
+  .card .body{padding:14px 16px}
+
+  .opts{display:flex;gap:11px;flex-wrap:wrap}
+  .opt{flex:1;min-width:210px;border:1px solid var(--line);border-radius:9px;padding:11px 12px;background:#fff}
+  .opt .on{font-weight:700;font-size:12.5px;margin-bottom:6px;display:flex;align-items:center;gap:7px}
+  .opt .on .box{width:13px;height:13px;border:2px solid var(--soft);border-radius:3px;flex:none}
+  .opt ul{margin:5px 0 0;padding-left:15px}
+  .opt li{font-size:10.8px;margin-bottom:3px;line-height:1.3}
+  .opt li.pro::marker{content:"+ "} .opt li.con::marker{content:"– "}
+  .opt li.pro{color:#15803d} .opt li.con{color:#b91c1c}
+
+  .rec{margin-top:12px;background:var(--recbg);border:1px solid #a7f3d0;border-radius:9px;
+       padding:10px 13px;font-size:11.8px;color:#065f46}
+  .rec b{color:var(--rec)}
+  .decide{margin-top:10px;border-top:1px dashed var(--line);padding-top:9px;font-size:11.5px;color:var(--soft)}
+  .decide b{color:var(--ink)}
+  .decide .blank{display:inline-block;border-bottom:1.5px solid var(--soft);min-width:280px;margin-left:6px}
+
+  .logi .opts{flex-direction:column}
+  .logi .opt{min-width:0}
+  .roster{width:100%;border-collapse:collapse;margin-top:8px;font-size:11.5px}
+  .roster th,.roster td{border:1px solid var(--line);padding:7px 9px;text-align:left}
+  .roster th{background:#f1f5f9;color:var(--soft);font-size:10.5px;text-transform:uppercase;letter-spacing:.3px}
+  .roster td{height:26px}
+
+  .note{font-size:11px;color:var(--soft);margin-top:14px;border-top:1px solid var(--line);padding-top:9px}
+  @media print{ body{padding:13px 15px} .card{break-inside:avoid} }
+  @page{size:A4 portrait;margin:11mm}
+</style>
+</head>
+<body>
+
+<h1>Decisões que o grupo precisa fechar</h1>
+<p class="sub">Proposta Executiva DW + Big Data · Consórcio de 6 locadoras · Parte 3</p>
+<p class="meta">Documento de apoio à reunião do grupo · acompanha o diagrama <i>arquitetura_referencia</i> · v0.1</p>
+
+<div class="intro">
+  Nosso papel é de <b>consultoria de tecnologia</b>: o professor já sugeriu a lista de ferramentas, e a nossa entrega é
+  <b>selecionar e justificar</b> a melhor opção em cada ponto do pipeline (inclusive o <b>porquê de não</b> escolher as outras).
+  Abaixo estão as <b>6 decisões</b> que travam o resto do trabalho. Cada uma traz a <b>recomendação da consultoria</b> —
+  basta o grupo ratificar ou ajustar e anotar no campo <b>Decisão do grupo</b>.
+</div>
+
+<!-- 1 -->
+<div class="card">
+  <div class="head"><span class="num">1</span><span class="q">Arquitetura de dados: Lambda ou Kappa?</span>
+       <span class="tag block">trava tudo</span></div>
+  <div class="body">
+    <div class="opts">
+      <div class="opt">
+        <div class="on"><span class="box"></span>Lambda (batch + speed separados)</div>
+        <ul>
+          <li class="pro">Mapeia direto os 3 processamentos pedidos (Spark, Flink, Hadoop)</li>
+          <li class="pro">Caminho histórico robusto e independente do tempo real</li>
+          <li class="con">Lógica duplicada: manter dois códigos (batch e stream)</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="on"><span class="box"></span>Kappa (tudo como stream)</div>
+        <ul>
+          <li class="pro">Um único código; mais simples de operar</li>
+          <li class="pro">Reprocessa histórico via replay do Kafka</li>
+          <li class="con">Reprocessar janelas históricas longas via stream é custoso</li>
+        </ul>
+      </div>
+    </div>
+    <div class="rec"><b>Recomendação:</b> <b>Lambda "unificada" via Delta Lake</b> — mantém os 3 caminhos de processamento,
+      mas usa o Delta Lake como camada única de armazenamento com <b>garantia ACID entre batch e streaming</b>,
+      reduzindo a dor da duplicação. É exatamente o exemplo citado pelo professor.</div>
+    <div class="decide"><b>Decisão do grupo:</b> <span class="blank"></span></div>
+  </div>
+</div>
+
+<!-- 2 -->
+<div class="card">
+  <div class="head"><span class="num">2</span><span class="q">Plataforma de processamento: Databricks ou GCP Dataproc?</span>
+       <span class="tag">infra</span></div>
+  <div class="body">
+    <div class="opts">
+      <div class="opt">
+        <div class="on"><span class="box"></span>Databricks</div>
+        <ul>
+          <li class="pro">Delta Lake nativo (combina com a decisão 1)</li>
+          <li class="pro">Notebooks colaborativos · Free Edition para estudo</li>
+          <li class="con">Custo em produção · algum lock-in</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="on"><span class="box"></span>GCP Dataproc</div>
+        <ul>
+          <li class="pro">Hadoop/Spark/Flink gerenciados · ecossistema aberto</li>
+          <li class="pro">Flink Playground gratuito · paga por uso</li>
+          <li class="con">Menos integrado que o Databricks p/ lakehouse</li>
+        </ul>
+      </div>
+    </div>
+    <div class="rec"><b>Recomendação:</b> se a narrativa girar em torno do <b>lakehouse/Delta Lake</b> (coerente com a decisão 1),
+      vai de <b>Databricks</b>. Se o grupo quiser enfatizar flexibilidade open-source e controle de custo, <b>Dataproc</b>.
+      Para a prova de conceito acadêmica, ambos têm tier gratuito.</div>
+    <div class="decide"><b>Decisão do grupo:</b> <span class="blank"></span></div>
+  </div>
+</div>
+
+<!-- 3 -->
+<div class="card">
+  <div class="head"><span class="num">3</span><span class="q">Dashboard: Grafana, Power BI ou os dois?</span>
+       <span class="tag">visualização</span></div>
+  <div class="body">
+    <div class="opts">
+      <div class="opt">
+        <div class="on"><span class="box"></span>Grafana</div>
+        <ul>
+          <li class="pro">Tempo real e séries temporais (frota, emergências)</li>
+          <li class="pro">Open source · conecta a Redis/Flink</li>
+          <li class="con">Menos forte em relatório financeiro/corporativo</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="on"><span class="box"></span>Power BI</div>
+        <ul>
+          <li class="pro">BI corporativo · integra com o DW (Parte 2)</li>
+          <li class="pro">Ótimo p/ financeiro, reservas, cobranças</li>
+          <li class="con">Refresh em minutos: não serve monitoramento ao vivo</li>
+        </ul>
+      </div>
+    </div>
+    <div class="rec"><b>Recomendação:</b> <b>os dois, com papéis distintos</b> — Grafana para o painel de frota em tempo real
+      (hot path) e Power BI para a visão histórica/financeira sobre o DW. Justifica naturalmente a separação hot × cold path.</div>
+    <div class="decide"><b>Decisão do grupo:</b> <span class="blank"></span></div>
+  </div>
+</div>
+
+<!-- 4 -->
+<div class="card">
+  <div class="head"><span class="num">4</span><span class="q">Incluir o extra do concierge de voz (IA)?</span>
+       <span class="tag">escopo</span></div>
+  <div class="body">
+    <div class="opts">
+      <div class="opt">
+        <div class="on"><span class="box"></span>Incluir</div>
+        <ul>
+          <li class="pro">Diferencial forte na defesa oral · mostra IA generativa</li>
+          <li class="pro">É só <b>especificação funcional</b>, não implementação — baixo custo</li>
+          <li class="con">Uma seção a mais para escrever</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="on"><span class="box"></span>Deixar de fora</div>
+        <ul>
+          <li class="pro">Foco total no núcleo do pipeline</li>
+          <li class="con">Abre mão de ponto extra que o enunciado oferece</li>
+        </ul>
+      </div>
+    </div>
+    <div class="rec"><b>Recomendação:</b> <b>incluir</b> como seção curta (LLM + RAG sobre base local de POIs + STT/TTS,
+      com ação no GPS via API do veículo). Alto retorno de imagem na apresentação, esforço baixo por ser só desenho funcional.</div>
+    <div class="decide"><b>Decisão do grupo:</b> <span class="blank"></span></div>
+  </div>
+</div>
+
+<!-- 5 -->
+<div class="card">
+  <div class="head"><span class="num">5</span><span class="q">Onde roda: cloud, Data Center do consórcio ou híbrido?</span>
+       <span class="tag">infra</span></div>
+  <div class="body">
+    <div class="opts">
+      <div class="opt">
+        <div class="on"><span class="box"></span>Híbrido (recomendado)</div>
+        <ul>
+          <li class="pro">Dado sensível/financeiro no Data Center (herda o DW da Parte 2)</li>
+          <li class="pro">Ingestão, processamento elástico e NoSQL gerenciado na cloud</li>
+          <li class="con">Dois ambientes para descrever</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="on"><span class="box"></span>100% cloud</div>
+        <ul>
+          <li class="pro">Mais simples de operar e narrar</li>
+          <li class="con">Enunciado valoriza a opção de Data Center próprio · custo recorrente</li>
+        </ul>
+      </div>
+    </div>
+    <div class="rec"><b>Recomendação:</b> <b>híbrido</b>. O enunciado abre explicitamente os dois caminhos
+      ("na nuvem, ou no Data Center do consórcio"). Lembrar de <b>citar custos embutidos</b> da parte cloud — é cobrado.</div>
+    <div class="decide"><b>Decisão do grupo:</b> <span class="blank"></span></div>
+  </div>
+</div>
+
+<!-- 6 -->
+<div class="card logi">
+  <div class="head"><span class="num">6</span><span class="q">Logística: divisão de tarefas e submissão</span>
+       <span class="tag block">zera nota se errar</span></div>
+  <div class="body">
+    <div class="opts">
+      <div class="opt">
+        <div class="on">Quem posta o quê</div>
+        <ul>
+          <li class="con">APENAS UM membro posta os 2 PDFs no AVA</li>
+          <li class="con">TODOS os demais postam folha de rosto no AVA (quem não postar nada = ZERO)</li>
+          <li class="con">UM membro envia e-mail a milton@matematica.ufrj.br (folha de rosto + link do GitHub)</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="on">Divisão da redação</div>
+        <ul>
+          <li>Seção DW (Parte 2) · Seção ingestão+processamento · Seção NoSQL+armazenamento</li>
+          <li>Dashboard+analytics · Extra concierge · Slides+conclusão</li>
+          <li>Responsável pelo repositório GitHub + README</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="note">
+  Depois de fechar as decisões 1 a 5, o diagrama <i>arquitetura_referencia</i> vira a figura definitiva da Proposta Executiva,
+  e dá pra partir para a redação do PDF 1, os slides e o repositório GitHub. A decisão 6 pode ser fechada em paralelo.
+</p>
+
+</body>
+</html>

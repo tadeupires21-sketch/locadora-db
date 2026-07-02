@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Proposta Executiva — DW + Big Data · Frota Conectada</title>
+<style>
+  :root{
+    --escuro:#0F766E;   /* verde escuro — títulos */
+    --claro:#14B8A6;    /* verde claro — destaques, regras, setas */
+    --grafite:#1F2937;  /* texto principal */
+    --cinza:#E5E7EB;    /* caixas / fundo secundário */
+    --cinza2:#F3F4F6;
+    --branco:#FFFFFF;
+    --soft:#6B7280;
+    --linha:#CBD5E1;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Roboto","Inter","Calibri","Segoe UI",sans-serif;color:var(--grafite);
+       line-height:1.55;font-size:11.2pt;background:var(--branco)}
+
+  @page{size:A4 portrait;margin:15mm 17mm 15mm}
+
+  /* container que simula a folha na visualização em tela */
+  .doc{max-width:210mm;margin:0 auto;padding:15mm 17mm 15mm;background:var(--branco)}
+  @media print{ .doc{max-width:none;margin:0;padding:0} }
+
+  /* moldura de página: o tfoot repete o rodapé em toda página impressa e reserva o espaço dele */
+  .pageframe{width:100%;border-collapse:collapse}
+  .pageframe>tbody>tr>td{padding:0;border:none;vertical-align:top}
+  .pageframe>tfoot>tr>td{padding:7mm 0 0;border:none}
+  .pageframe tfoot{display:table-footer-group}
+  .runfoot{display:flex;justify-content:space-between;
+           font-size:8.3pt;color:var(--soft);border-top:1px solid var(--linha);padding-top:5px}
+  .runfoot b{color:var(--escuro)}
+
+  /* ---------- folha de rosto ---------- */
+  .cover{min-height:252mm;display:flex;flex-direction:column;text-align:center;page-break-after:always}
+  .cover .inst{margin-top:4mm}
+  .cover .inst .u{font-size:15pt;font-weight:800;color:var(--escuro);letter-spacing:.3px}
+  .cover .inst .i{font-size:12.5pt;color:var(--grafite);margin-top:2px}
+  .cover .inst .d{font-size:11.5pt;color:var(--soft);margin-top:2px}
+  .cover .band{margin-top:auto;margin-bottom:auto}
+  .cover .part{display:inline-block;font-size:11pt;font-weight:700;letter-spacing:2px;color:var(--claro);
+               text-transform:uppercase;border:2px solid var(--claro);border-radius:30px;padding:6px 20px;margin-bottom:22px}
+  .cover h1{font-size:26pt;font-weight:800;color:var(--escuro);line-height:1.12;margin-bottom:10px}
+  .cover .stitle{font-size:13.5pt;color:var(--grafite);font-weight:500;margin-bottom:6px}
+  .cover .ssub{font-size:11.5pt;color:var(--soft)}
+  .cover .rule{height:3px;width:90px;background:var(--claro);border-radius:3px;margin:24px auto}
+  .cover .team .lbl{font-size:10.5pt;text-transform:uppercase;letter-spacing:1.5px;color:var(--soft);margin-bottom:10px}
+  .cover .team .m{font-size:12.5pt;color:var(--grafite);margin:3px 0}
+  .cover .team .m b{color:var(--escuro)}
+  .cover .place{margin-top:auto;font-size:12pt;color:var(--grafite);font-weight:600}
+  .cover .place span{display:block;font-size:11pt;color:var(--soft);font-weight:400}
+
+  /* ---------- tipografia de corpo ---------- */
+  h2{font-size:16.5pt;color:var(--escuro);font-weight:800;margin:0 0 3px;line-height:1.15;break-after:avoid}
+  h2 .nn{color:var(--claro);margin-right:10px}
+  .hrule{height:3px;width:64px;background:var(--claro);border-radius:3px;margin:8px 0 14px}
+  h3{font-size:12.5pt;color:var(--escuro);font-weight:700;margin:16px 0 5px;break-after:avoid}
+  p{margin:0 0 10px;text-align:justify}
+  p b, li b{color:var(--escuro)}
+  section{margin-bottom:20px}
+  code{font-family:"Consolas","Courier New",monospace;font-size:9.6pt;background:var(--cinza2);
+       padding:1px 5px;border-radius:4px;color:var(--escuro)}
+  ul.bul{margin:4px 0 12px;padding-left:0;list-style:none}
+  ul.bul li{position:relative;padding:4px 0 4px 22px;text-align:justify}
+  ul.bul li::before{content:"";position:absolute;left:3px;top:12px;width:8px;height:8px;border-radius:50%;background:var(--claro)}
+
+  /* ---------- caixa de destaque ---------- */
+  .call{background:var(--cinza2);border-left:4px solid var(--claro);border-radius:8px;
+        padding:12px 16px;margin:12px 0 14px;font-size:11pt;break-inside:avoid}
+  .call.key{background:#ecfdf5;border-left-color:var(--escuro)}
+  .call b{color:var(--escuro)}
+  .call .ct{font-size:9.5pt;text-transform:uppercase;letter-spacing:1px;color:var(--soft);font-weight:700;margin-bottom:4px}
+
+  /* ---------- tabelas ---------- */
+  table{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:10.3pt;break-inside:avoid}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--linha);vertical-align:top}
+  th{background:var(--escuro);color:#fff;font-size:9.5pt;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+  td.k{font-weight:700;color:var(--escuro);white-space:nowrap}
+  tr.base td{background:#ecfdf5}
+  .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  caption{caption-side:bottom;text-align:left;font-size:9pt;color:var(--soft);margin-top:5px;font-style:italic}
+
+  /* duas/três colunas */
+  .two{display:flex;gap:16px;margin:8px 0 14px;break-inside:avoid}
+  .two .col{flex:1;background:var(--cinza);border-radius:10px;padding:12px 14px}
+  .two .col h4{font-size:11pt;color:var(--escuro);margin-bottom:6px;font-weight:700}
+  .two .col ul{list-style:none;padding:0}
+  .two .col li{position:relative;padding:3px 0 3px 18px;font-size:10.4pt}
+  .two .col li::before{content:"";position:absolute;left:2px;top:10px;width:7px;height:7px;border-radius:50%;background:var(--claro)}
+
+  /* diagrama de pipeline */
+  .flow{display:flex;align-items:stretch;gap:6px;margin:10px 0 14px;flex-wrap:nowrap;break-inside:avoid}
+  .flow .st{flex:1;background:var(--cinza);border-radius:9px;padding:9px 8px;text-align:center}
+  .flow .st .n{font-size:8.5pt;color:var(--claro);font-weight:800;letter-spacing:.5px}
+  .flow .st .t{font-size:10pt;color:var(--escuro);font-weight:700;margin:2px 0 3px}
+  .flow .st .d{font-size:8.4pt;color:var(--grafite);line-height:1.3}
+  .flow .ar{display:flex;align-items:center;color:var(--claro);font-weight:800;font-size:15pt}
+
+  /* síntese de decisões */
+  .sint td.ok{color:var(--escuro);font-weight:700}
+  .sint td.no{color:#b91c1c}
+
+  .repo{margin-top:14px;font-size:10pt;color:var(--soft)}
+  .repo b{color:var(--escuro)}
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+<!-- ============ FOLHA DE ROSTO ============ -->
+<div class="cover">
+  <div class="inst">
+    <div class="u">Universidade Federal do Rio de Janeiro</div>
+    <div class="i">Instituto de Computação</div>
+    <div class="d">Banco de Dados — Projeto de Data Warehouse</div>
+  </div>
+
+  <div class="band">
+    <span class="part">Parte III · Documento 1</span>
+    <h1>Proposta Executiva<br>Solução Híbrida de Data Warehouse e Big Data</h1>
+    <div class="stitle">Operacionalização de uma frota conectada de locadoras em escala de cidade</div>
+    <div class="ssub">Sistema de Locação de Veículos · Expansão da solução de Data Warehouse da Parte 2</div>
+    <div class="rule"></div>
+    <div class="team">
+      <div class="lbl">Componentes do grupo</div>
+      <div class="m"><b>Tadeu Belfort Neto</b> — DRE 119034813</div>
+      <div class="m"><b>Vicente Alves</b> — DRE 1220044148</div>
+      <div class="m"><b>João Pedro de Lacerda</b> — DRE 116076670</div>
+    </div>
+  </div>
+
+  <div class="place">Rio de Janeiro<span>2026</span></div>
+</div>
+
+<!-- ============ CORPO (rodapé repetido via tfoot da moldura) ============ -->
+<table class="pageframe">
+<tfoot><tr><td>
+  <div class="runfoot">
+    <span><b>UFRJ · Instituto de Computação</b> · Banco de Dados</span>
+    <span>Proposta Executiva · Parte III · Documento 1</span>
+  </div>
+</td></tr></tfoot>
+<tbody><tr><td>
+
+<section>
+  <h2><span class="nn">1</span>Sumário Executivo</h2>
+  <div class="hrule"></div>
+  <p>O consórcio de locadoras deseja evoluir de uma operação tradicional para uma <b>frota conectada</b>,
+  capaz de ser acompanhada em tempo real, de reagir a emergências e de cobrar o cliente de forma adaptativa
+  conforme o uso e o desgaste do veículo. Esta proposta, elaborada na posição de <b>consultoria de tecnologia</b>,
+  recomenda e justifica a stack para cada etapa do pipeline de dados — e registra explicitamente o motivo de
+  <b>não</b> adotar as alternativas concorrentes.</p>
+
+  <p>A solução recomendada é uma <b>plataforma híbrida que combina Data Warehouse (DW) e Big Data</b>: o DW dimensional
+  já construído na Parte 2 (PostgreSQL) é preservado como fonte oficial do financeiro, e ao seu redor montamos um
+  pipeline de Big Data — borda → ingestão → processamento → armazenamento → consumo — para o fluxo contínuo de
+  telemetria da frota. O termo "híbrida" refere-se a essa convivência <b>DW + Big Data</b>; a infraestrutura
+  recomendada é de <b>nuvem única</b>, não de nuvem híbrida.</p>
+
+  <div class="call key">
+    <div class="ct">Recomendação da consultoria</div>
+    Adotar um <b>lakehouse unificado</b> (Databricks + Apache Spark + Delta Lake) sobre <b>nuvem única</b>,
+    alimentado por <b>Apache Kafka gerenciado</b> e por <b>computação na borda</b>, com <b>armazenamento poliglota</b>
+    (Redis · MongoDB · Delta · PostgreSQL) e consumo por <b>Grafana + BI (Business Intelligence) + ML (Machine
+    Learning, aprendizado de máquina)</b>. O critério que orienta cada escolha é o <b>custo total de propriedade
+    (TCO — Total Cost of Ownership)</b> com a stack mais simples e segura possível dentro do orçamento.
+  </div>
+
+  <p>A frota gera um fluxo constante de dados que exige infraestrutura robusta de ingestão e armazenamento, mas o
+  perfil do cliente — <b>baixa capacidade de investimento e necessidade de retorno rápido</b> — impõe disciplina de
+  custo em todas as camadas. Por isso, <b>redução de custo é um critério de projeto explícito</b> desta proposta,
+  e não apenas uma observação ao final.</p>
+</section>
+
+<section>
+  <h2><span class="nn">2</span>Contexto e Problema de Negócio</h2>
+  <div class="hrule"></div>
+  <p>O consórcio reúne locadoras que operam pátios em uma <b>mesma cidade</b> e querem automatizar e conectar a frota.
+  Três frentes de valor sustentam o projeto: <b>operação em tempo real</b> (acompanhar a situação da frota e responder
+  a emergências), <b>cobrança adaptativa</b> (precificar conforme uso e desgaste) e <b>redução de prejuízos</b>
+  (menos custo com seguradoras e menos veículo parado em manutenção).</p>
+
+  <p>O perfil do cliente delimita a engenharia da solução:</p>
+  <ul class="bul">
+    <li><b>Baixa capacidade de investimento e ROI (Return on Investment — retorno sobre o investimento) rápido</b> — o TCO é o critério que decide entre alternativas tecnicamente válidas.</li>
+    <li><b>Escala de cidade, não de megacidade</b> — pátios de uma mesma cidade; não há justificativa para superdimensionar a infraestrutura.</li>
+    <li><b>Fluxo contínuo de dados</b> — a frota conectada produz telemetria sem pausa, exigindo ingestão e armazenamento resilientes.</li>
+    <li><b>Reaproveitamento do DW da Parte 2</b> — o Data Warehouse dimensional já existe e deve ser estendido, não descartado.</li>
+  </ul>
+
+  <p>Esse perfil explica o próprio formato do cliente: <b>locadoras menores</b> que, isoladamente, não comportariam
+  uma plataforma de Big Data unem-se em <b>consórcio</b> para diluir o custo e operam na <b>escala de uma cidade</b> —
+  não de uma megacidade. O enquadramento não é um detalhe de cenário: é o que sustenta, adiante, o <b>right-sizing</b>
+  da solução (o descarte de Cassandra e de Flink) e a opção por <b>nuvem única</b>.</p>
+
+  <div class="call">
+    <b>Mandato da consultoria:</b> entregar a stack mais simples e segura possível dentro do orçamento — sem abrir
+    mão da capacidade analítica nem da segurança da informação.
+  </div>
+</section>
+
+<section>
+  <h2><span class="nn">3</span>Objetivos da Solução</h2>
+  <div class="hrule"></div>
+  <p>A solução precisa entregar resultado em duas dimensões complementares — a operacional e a financeira —
+  sempre respeitando a limitação orçamentária, princípio que guia cada escolha desta proposta.</p>
+  <div class="two">
+    <div class="col">
+      <h4>Operação em tempo real</h4>
+      <ul>
+        <li>Acompanhamento contínuo da situação da frota</li>
+        <li>Resposta imediata em emergências</li>
+        <li>Mais clientes atendidos sem expandir a frota</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h4>Resultado financeiro</h4>
+      <ul>
+        <li>Cobrança automática e adaptativa por desgaste</li>
+        <li>Menos custo com seguradoras — prêmio e sinistro</li>
+        <li>Menos prejuízo com veículo parado em manutenção</li>
+      </ul>
+    </div>
+  </div>
+  <div class="call">
+    <b>Vídeo como evidência:</b> além de reduzir o prêmio do seguro, o registro audiovisual da emergência funciona como
+    <b>prova do sinistro</b> — facilita a aceitação do reembolso pela seguradora e <b>agiliza a liquidação</b>, encurtando
+    o tempo com o veículo parado.
+  </div>
+</section>
+
+<section>
+  <h2><span class="nn">4</span>Premissas e Enquadramento</h2>
+  <div class="hrule"></div>
+  <p>O dimensionamento parte de premissas conservadoras, coerentes com a escala de cidade. Cada veículo ativo
+  emite cerca de <b>1 mensagem por segundo</b> de telemetria de rotina, com <b>payload comprimido de 1–2 KB</b>
+  (dados, não vídeo), durante uma janela ativa média de <b>~12 h/dia</b>. Os dados emergenciais — incluindo vídeo —
+  são <b>event-driven e raros</b>, transmitidos apenas no gatilho. A tabela abaixo ancora três cenários de frota;
+  o intermediário é tratado como baseline.</p>
+
+  <table>
+    <tr><th>Cenário (frota ativa)</th><th class="num">Pico de mensagens</th><th class="num">Vazão de ingestão</th>
+        <th class="num">Ingestão bruta/dia</th><th class="num">Ingestão bruta/mês</th></tr>
+    <tr><td class="k">1.000 veículos</td><td class="num">~1.000 msg/s</td><td class="num">~1,5 MB/s</td>
+        <td class="num">~65 GB</td><td class="num">~1,9 TB</td></tr>
+    <tr class="base"><td class="k">2.000 veículos (baseline)</td><td class="num">~2.000 msg/s</td><td class="num">~3 MB/s</td>
+        <td class="num">~130 GB</td><td class="num">~3,9 TB</td></tr>
+    <tr><td class="k">5.000 veículos</td><td class="num">~5.000 msg/s</td><td class="num">~7,5 MB/s</td>
+        <td class="num">~325 GB</td><td class="num">~9,7 TB</td></tr>
+    <caption>Volumes derivados das premissas (1 msg/s · 1–2 KB · ~12 h/dia). O vídeo emergencial entra à parte, por ser esporádico.</caption>
+  </table>
+
+  <p>Esses números confirmam o ponto central: a telemetria de rotina, embora contínua, é <b>modesta em volume</b>
+  quando comprimida na borda. É o vídeo emergencial — caro e volumoso — que precisa ser contido por desenho,
+  transmitido apenas quando há um evento que o justifique. Essa distinção orienta toda a arquitetura.</p>
+</section>
+
+<section>
+  <h2><span class="nn">5</span>Arquitetura de Referência</h2>
+  <div class="hrule"></div>
+  <p>O pipeline percorre cinco camadas, do carro ao dashboard. A decisão estrutural mais importante é a
+  <b>separação entre o caminho quente (emergências) e o caminho frio (telemetria de rotina) já na borda</b>:
+  cada tipo de dado segue por um trajeto dimensionado para o seu custo e para a sua urgência.</p>
+
+  <div class="flow">
+    <div class="st"><div class="n">1 · BORDA</div><div class="t">Computador de bordo</div><div class="d">Pré-agrega telemetria (~1s); vídeo só em emergência</div></div>
+    <div class="ar">→</div>
+    <div class="st"><div class="n">2 · INGESTÃO</div><div class="t">Apache Kafka</div><div class="d">Tópicos rotina × alertas; partição por veículo</div></div>
+    <div class="ar">→</div>
+    <div class="st"><div class="n">3 · LAKEHOUSE</div><div class="t">Databricks + Delta</div><div class="d">Spark batch + stream; Bronze→Silver→Gold</div></div>
+    <div class="ar">→</div>
+    <div class="st"><div class="n">4 · SERVING</div><div class="t">Redis·Mongo·Postgres</div><div class="d">Estado ao vivo, docs e DW (Parte 2)</div></div>
+    <div class="ar">→</div>
+    <div class="st"><div class="n">5 · CONSUMO</div><div class="t">Grafana·BI·ML</div><div class="d">Tempo real, financeiro e preditivo</div></div>
+  </div>
+
+  <p>Sustentando as cinco camadas, três pilares transversais: <b>nuvem única</b> (stack gerenciada, modelo opex,
+  sem on-premise), <b>segurança</b> (criptografia, IAM — Identity and Access Management, gestão de identidade e
+  acesso —, VPC — Virtual Private Cloud, rede virtual privada — e LGPD — Lei Geral de Proteção de Dados — em
+  região brasileira) e <b>orquestração</b>
+  (Databricks Workflows e governança de dados). As seções seguintes detalham cada camada e justificam as escolhas.</p>
+</section>
+
+<section>
+  <h2><span class="nn">6</span>Camada 1 — Coleta na Borda (Edge Computing)</h2>
+  <div class="hrule"></div>
+  <p>O computador de bordo de cada veículo é a primeira — e mais importante — alavanca de custo da solução.
+  Em vez de transmitir tudo em tempo integral, ele <b>pré-processa os dados localmente</b> e decide o que sobe
+  para a nuvem, separando desde a origem a rotina da emergência.</p>
+
+  <div class="two">
+    <div class="col">
+      <h4>Dados de rotina · caminho frio</h4>
+      <ul>
+        <li>Telemetria compactada a cada ~1 s</li>
+        <li>Posição e situação geral do veículo</li>
+        <li>Base da cobrança por desgaste</li>
+        <li>Transmissão barata e espaçada</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h4>Dados emergenciais · caminho quente</h4>
+      <ul>
+        <li>Vídeo/imagens apenas no gatilho (caro)</li>
+        <li>(a) Problema interno → alerta + snapshot</li>
+        <li>(b) Risco externo → imagens prévias ou streaming</li>
+        <li>(c) Botão do motorista → streaming contínuo</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>Os três gatilhos de emergência cobrem situações distintas, cada um com uma resposta proporcional ao risco:</p>
+  <ul class="bul">
+    <li><b>Problema interno do veículo</b> — alerta imediato com <b>snapshot</b> do estado no instante da detecção.
+    Se uma nova ocorrência surgir dentro de uma janela de tempo, são enviadas também as <b>imagens de antes e depois</b>
+    (recomendado: 5 min de cada lado). Quando a falha inviabiliza o uso do carro (ex.: enguiço), o evento <b>escala para
+    prioridade máxima</b>, pois implica retirar o veículo da frota ativa.</li>
+    <li><b>Risco externo</b> — desdobra-se em dois níveis. Numa <b>desaceleração brusca</b>, sobem apenas as imagens que
+    <b>antecederam</b> o evento (recomendado: último 1 min), sem streaming. Já o acionamento dos <b>sensores de
+    pré-impacto</b> (risco maior) dispara um <b>vídeo mais longo</b> (mín. 5 min) e <b>streaming ao vivo</b> por igual duração.</li>
+    <li><b>Botão de emergência do motorista</b> — nível máximo de prioridade: alerta, dados do <b>último 1 min</b> e
+    <b>streaming contínuo</b> até a <b>desativação manual</b>, pelo próprio motorista ou pela central.</li>
+  </ul>
+  <p>Em todos os casos, o vídeo só existe quando há motivo para existir — é o que mantém o custo de banda sob controle.</p>
+
+  <div class="call key">
+    <div class="ct">Principal alavanca de custo</div>
+    Pré-processar a bordo elimina o gasto recorrente mais caro de toda a operação — a <b>banda móvel</b>.
+    Transmitir vídeo continuamente de milhares de veículos seria proibitivo; restringi-lo ao gatilho de emergência
+    é o que torna a solução economicamente viável na escala de cidade.
+  </div>
+</section>
+
+<section>
+  <h2><span class="nn">7</span>Camada 2 — Ingestão de Eventos (Apache Kafka)</h2>
+  <div class="hrule"></div>
+  <p>A ingestão usa um <b>barramento de eventos gerenciado</b> (Apache Kafka, via Amazon MSK — Managed Streaming
+  for Apache Kafka — ou Confluent Cloud) que desacopla a
+  frota dos consumidores e absorve picos sem perder dados. O Kafka é o ponto de entrada de tudo o que sai dos veículos.</p>
+  <ul class="bul">
+    <li><b>Tópicos separados</b> — telemetria de rotina e alertas de emergência trafegam em tópicos distintos, de modo que um alerta crítico nunca fique na fila atrás da telemetria de baixa prioridade.</li>
+    <li><b>Partição por <code>vehicle_id</code></b> — garante a ordenação estrita dos eventos de cada veículo (por timestamp) mesmo sob carga, o que é essencial para reconstruir corretamente uma viagem ou um incidente.</li>
+    <li><b>Tolerância a falhas e replay</b> — as mensagens ficam retidas por um período configurável (recomendado: <b>7 dias</b> para a telemetria de rotina e <b>30 dias</b> para os alertas), com replicação entre brokers. Esse histórico permite <b>reprocessar</b> os dados a qualquer momento sem precisar de uma fonte adicional — é a base do modelo de reprocessamento adotado na Camada 3.</li>
+    <li><b>Consumidores independentes (consumer groups)</b> — o mesmo tópico é lido em paralelo por vários consumidores sem interferência mútua: o Spark (analítico), o serviço de alertas de emergência e o arquivamento no lakehouse leem o mesmo fluxo, cada um no seu ritmo.</li>
+    <li><b>Serialização compacta</b> — mensagens em formato binário (Avro ou Protobuf) com <b>Schema Registry</b>: menos bytes na rede móvel (custo) e um contrato de dados validado entre o veículo e a nuvem (qualidade).</li>
+    <li><b>Serviço gerenciado</b> — zero servidor Kafka para a equipe operar, coerente com a ausência de time de infraestrutura dedicado.</li>
+  </ul>
+  <div class="call">
+    <b>Por que não enviar requisições REST (Representational State Transfer, o padrão de APIs sobre HTTP) direto ao banco:</b> sob o pico de milhares de mensagens por segundo, o acesso direto
+    ao banco vira gargalo de concorrência e leva à perda de eventos. O Kafka existe justamente para amortecer esse pico.
+  </div>
+</section>
+
+<section>
+  <h2><span class="nn">8</span>Camada 3 — Processamento (Lakehouse Unificado)</h2>
+  <div class="hrule"></div>
+  <p>O coração analítico da solução é um <b>lakehouse</b>: um único motor de processamento sobre uma única camada de
+  armazenamento transacional, eliminando a proliferação de tecnologias que historicamente encarece e complica
+  pipelines de Big Data.</p>
+  <ul class="bul">
+    <li><b>Databricks + Spark Structured Streaming</b> — um só motor trata <b>batch e streaming com o mesmo código</b>, atendendo tanto a análise contínua quanto o caminho quente das emergências.</li>
+    <li><b>Delta Lake em arquitetura medalhão</b> — os dados evoluem de <b>Bronze</b> (bruto) para <b>Silver</b> (limpo e anonimizado) e <b>Gold</b> (pronto para consumo), com garantias <b>ACID</b> (Atomicidade, Consistência, Isolamento e Durabilidade) válidas entre batch e stream.</li>
+    <li><b>Modelo Kappa</b> — o reprocessamento histórico é feito por <b>replay</b> a partir do Kafka, evitando a duplicação de lógica que caracteriza a arquitetura Lambda (um código para batch e outro para stream).</li>
+  </ul>
+
+  <h3>Comparação formal: Lambda × Kappa</h3>
+  <p>A escolha do Kappa sobre Delta Lake resolve o impasse clássico entre as duas arquiteturas de referência. A
+  <b>Lambda</b> mantém dois caminhos independentes — a <i>batch layer</i> (visão completa e correta, recalculada
+  periodicamente) e a <i>speed layer</i> (visão aproximada e imediata) — reconciliados numa camada de serving. É
+  robusta, porém obriga a manter <b>duas bases de código sincronizadas</b> para a mesma regra de negócio. A
+  <b>Kappa</b> elimina a batch layer: tudo é tratado como fluxo, e o reprocessamento histórico é um <b>replay</b> do
+  próprio Kafka. O Delta Lake completa o desenho ao dar ao stream único a robustez transacional que era o argumento
+  da batch layer.</p>
+
+  <table>
+    <tr><th>Critério</th><th>Lambda</th><th>Kappa (adotada)</th></tr>
+    <tr><td class="k">Caminhos de processamento</td><td>Dois: batch layer + speed layer</td><td>Um: stream; o "batch" é replay do Kafka</td></tr>
+    <tr><td class="k">Base de código</td><td>Duplicada — mesma regra escrita duas vezes</td><td>Única — mesmo código Spark para batch e stream</td></tr>
+    <tr><td class="k">Consistência batch × stream</td><td>Reconciliação manual na camada de serving</td><td>Transações ACID do Delta Lake para os dois</td></tr>
+    <tr><td class="k">Custo operacional</td><td>Dois pipelines e dois clusters para manter</td><td>Um pipeline, um cluster elástico</td></tr>
+    <tr><td class="k">Quando faz sentido</td><td>Reprocessos massivos com lógicas realmente distintas</td><td>Fluxo contínuo com reprocesso ocasional — o nosso caso</td></tr>
+  </table>
+
+  <h3>Arquitetura medalhão aplicada ao projeto</h3>
+  <ul class="bul">
+    <li><b>Bronze (bruto)</b> — os eventos exatamente como chegaram do Kafka, imutáveis; servem de trilha de auditoria e de fonte para reprocessamento.</li>
+    <li><b>Silver (curado)</b> — telemetria <b>deduplicada, validada e anonimizada</b> (atendendo à LGPD), enriquecida com os cadastros de veículo, locação e cliente vindos do DW.</li>
+    <li><b>Gold (consumo)</b> — agregados de negócio prontos: quilometragem e tempo de uso por locação, indicadores de desgaste por veículo, séries de demanda por região — o que alimenta a cobrança adaptativa, o BI e o ML.</li>
+  </ul>
+
+  <h3>O que roda em streaming e o que roda em batch</h3>
+  <div class="two">
+    <div class="col">
+      <h4>Streaming · contínuo, 24/7</h4>
+      <ul>
+        <li>Detecção e triagem de emergências (caminho quente)</li>
+        <li>Atualização do estado ao vivo da frota no Redis</li>
+        <li>Janelas temporais (ex.: médias por 1–5 min) para congestionamento e anomalias</li>
+        <li>Aterrissagem contínua dos eventos na camada Bronze</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h4>Batch · agendado, em instâncias spot</h4>
+      <ul>
+        <li>Consolidação diária de quilometragem e tempo de uso</li>
+        <li>Apuração da cobrança adaptativa pós-devolução</li>
+        <li>Treinamento dos modelos de previsão de falhas e demanda</li>
+        <li>Compactação e downsampling do histórico (custo de storage)</li>
+      </ul>
+    </div>
+  </div>
+  <p>Nos dois modos o motor é o mesmo — o Spark Structured Streaming processa o fluxo em <b>micro-batches</b>, com
+  latência de poucos segundos, suficiente para o alerta de emergência chegar à central em tempo hábil. É essa
+  unificação que dispensa um segundo motor de streaming.</p>
+
+  <div class="two">
+    <div class="col">
+      <h4>Mantido (right-sizing)</h4>
+      <ul>
+        <li>Spark (batch + stream) sobre Delta Lake — um motor, um código</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h4>Descartado (right-sizing)</h4>
+      <ul>
+        <li>Hadoop / MapReduce — paradigma legado: grava resultado intermediário em disco a cada etapa, enquanto o Spark processa em memória (ordens de grandeza mais rápido) com API de mais alto nível</li>
+        <li>Apache Flink — especializado em latência sub-segundo evento a evento, que não se justifica na escala de cidade; o Spark Structured Streaming cobre o caminho quente com segundos de latência e um motor a menos para operar</li>
+      </ul>
+    </div>
+  </div>
+  <p>O princípio aqui é <b>right-sizing</b>: adotar a peça certa para a escala do problema. Menos peças significa
+  menos código, menos a operar e menos custo — sem perda de capacidade analítica.</p>
+</section>
+
+<section>
+  <h2><span class="nn">9</span>Camada 4 — Armazenamento Poliglota</h2>
+  <div class="hrule"></div>
+  <p>Não existe um banco único ideal para todos os perfis de dado da solução. Adotamos <b>persistência poliglota</b>,
+  combinando bancos <b>NoSQL</b> ("not only SQL" — modelos não relacionais como chave-valor e documentos) com o
+  relacional: cada tipo de dado vai para a tecnologia que melhor o atende em custo e desempenho.</p>
+  <table>
+    <tr><th>Tecnologia</th><th>Papel</th><th>Por que</th></tr>
+    <tr><td class="k">Redis</td><td>Estado ao vivo da frota + cache de rotas</td><td>Leitura sub-milissegundo para o painel em tempo real</td></tr>
+    <tr><td class="k">MongoDB Atlas</td><td>Documentos: viagens, sinistros, inspeções</td><td>Schema flexível para dados semiestruturados; gerenciado</td></tr>
+    <tr><td class="k">Delta Lake</td><td>Histórico analítico de telemetria</td><td>Barato, escalável e com ACID; é a camada do lakehouse</td></tr>
+    <tr><td class="k">PostgreSQL (DW)</td><td>Financeiro e cobrança — reúso da Parte 2</td><td>ACID estrito; zero licença nova; modelo dimensional pronto</td></tr>
+  </table>
+  <p>As quatro peças formam um <b>ciclo de vida do dado</b> alinhado ao custo: o evento chega pelo Kafka e atualiza o
+  <b>Redis</b> (estado ao vivo, com expiração automática — só o presente importa ali); o mesmo evento aterrissa no
+  <b>Delta Lake</b>, onde vive o histórico completo em storage barato; documentos operacionais (dossiê de viagem,
+  sinistro, inspeção) consolidam-se no <b>MongoDB</b>; e os agregados financeiros apurados no lakehouse são gravados no
+  <b>PostgreSQL/DW</b>, que permanece a fonte oficial de cobrança e relatório. Cada dado é pago pelo que ele vale em
+  cada fase da sua vida — quente, morno ou frio.</p>
+  <div class="call">
+    <b>Por que descartamos o Cassandra:</b> ele foi projetado para escrita massiva distribuída em múltiplos
+    data centers — um perfil de megacidade. Na escala de cidade, seria <b>superdimensionar</b>. O Delta Lake cobre
+    o histórico de telemetria com menos custo operacional e ainda integra nativamente ao motor de processamento.
+  </div>
+</section>
+
+<section>
+  <h2><span class="nn">10</span>Camada 5 — Consumo (Analytics, Dashboards e IA)</h2>
+  <div class="hrule"></div>
+  <p>O valor dos dados se realiza no consumo. Três frentes atendem públicos e perguntas diferentes, todas sobre
+  uma base de dados única e consistente.</p>
+  <div class="two">
+    <div class="col">
+      <h4>Tempo real · Grafana</h4>
+      <ul>
+        <li>Frota: ativos, circulação, manutenção</li>
+        <li>Viagens em andamento e emergências</li>
+        <li>Alimentado por Redis / streaming</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h4>Negócio · BI sobre o DW</h4>
+      <ul>
+        <li>Reservas, locações, cobranças, financeiro</li>
+        <li>Metabase (open-source) ou Power BI</li>
+        <li>Cobrança adaptativa pós-devolução</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h4>Inteligência · ML</h4>
+      <ul>
+        <li>Previsão de falhas mecânicas</li>
+        <li>Previsão de demanda por região</li>
+        <li>Databricks ML / MLflow</li>
+      </ul>
+    </div>
+  </div>
+  <p>Em conjunto, as três frentes cobrem os <b>quatro tipos de análise</b> — descritiva (o que aconteceu),
+  diagnóstica (por que aconteceu), preditiva (o que vai acontecer) e prescritiva (o que fazer) — sobre uma base única.
+  O Grafana atende ao monitoramento ao vivo do caminho quente; o BI corporativo atende à visão histórica e financeira
+  sobre o DW; e o ML antecipa falhas e demanda, fechando o ciclo de valor.</p>
+
+  <h3>Roadmap — otimização de rotas e frota não tripulada</h3>
+  <p>A telemetria de rotina, além de embasar a cobrança, habilita uma evolução natural já prevista na especificação
+  original: usar o histórico de deslocamento para <b>otimizar rotas</b> e, no limite, conduzir <b>veículos não
+  tripulados</b>. O <b>ML preditivo</b> (Camada 5) aprende os padrões de trânsito e de demanda, e o <b>cache de rotas no
+  Redis</b> (Camada 4) entrega a rota escolhida ao veículo em tempo real. É a <b>mesma infraestrutura, sem novas peças</b>,
+  elevando a <b>eficiência da frota</b>: menos quilômetro ocioso, melhor posicionamento dos carros e, adiante, a condução
+  autônoma apoiada nos dados que a solução já coleta.</p>
+</section>
+
+<section>
+  <h2><span class="nn">11</span>Nuvem e Segurança</h2>
+  <div class="hrule"></div>
+  <p>A solução roda em <b>nuvem única</b>, sem componente on-premise nem nuvem híbrida. Essa escolha foi reaberta e
+  confirmada à luz da experiência de mercado: o modelo híbrido adicionaria custo de equipamento e de pessoal e elevaria
+  muito a complexidade de sincronização entre ambientes — sem benefício proporcional na escala de cidade.</p>
+  <div class="two">
+    <div class="col">
+      <h4>Por que nuvem única (sem híbrido)</h4>
+      <ul>
+        <li>Opex, não capex — sem comprar hardware</li>
+        <li>Sem equipe de data center para manter</li>
+        <li>Elimina a sincronização on-prem ↔ cloud</li>
+        <li>Stack portável entre provedores</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h4>Como mantemos a segurança</h4>
+      <ul>
+        <li>Criptografia em repouso e em trânsito</li>
+        <li>IAM de menor privilégio + isolamento por VPC</li>
+        <li>LGPD: região brasileira + anonimização na Silver</li>
+        <li>Auditoria e políticas de retenção</li>
+      </ul>
+    </div>
+  </div>
+  <div class="call key">
+    Sigilo de dados <b>não exige servidor próprio</b>: controles cloud-native (criptografia, IAM, VPC) somados à
+    <b>residência de dados no Brasil</b> atendem aos requisitos de segurança e de LGPD com menor custo e menor complexidade.
+  </div>
+</section>
+
+<section>
+  <h2><span class="nn">12</span>Estratégia de Redução de Custos</h2>
+  <div class="hrule"></div>
+  <p>Por se tratar de um cliente com orçamento restrito e necessidade de ROI rápido, a redução de custo é o
+  <b>fio condutor</b> da arquitetura — materializada em seis alavancas que atravessam todas as camadas.</p>
+  <table>
+    <tr><th>Alavanca</th><th>Como reduz custo</th></tr>
+    <tr><td class="k">Edge corta a banda</td><td>Só a emergência sobe vídeo; elimina o maior custo recorrente da operação</td></tr>
+    <tr><td class="k">Open-source primeiro</td><td>PostgreSQL, Kafka, Spark e Grafana — zero custo de licença</td></tr>
+    <tr><td class="k">Batch em instâncias spot</td><td>Só o caminho quente fica 24/7; o batch e o ML rodam de forma pontual e barata</td></tr>
+    <tr><td class="k">Armazenamento em camadas</td><td>Hot (Redis) → warm (MongoDB) → cold (Delta) com TTL (Time to Live — expiração automática) e downsampling</td></tr>
+    <tr><td class="k">Reúso do DW da Parte 2</td><td>Sem reescrever nem relicenciar o que já existe e funciona</td></tr>
+    <tr><td class="k">Right-sizing como princípio</td><td>Infraestrutura de cidade, não de megacidade — nada superdimensionado</td></tr>
+  </table>
+  <p>Há ainda um retorno que compensa o único fluxo caro que mantemos. O <b>vídeo emergencial</b> não é só custo: é a
+  <b>evidência do sinistro</b> que facilita a aceitação do reembolso e <b>agiliza a liquidação</b> junto à seguradora.
+  O gasto pontual de banda no momento da emergência converte-se em <b>recuperação financeira</b> e em menos dias de
+  veículo parado — um custo que, na prática, se paga.</p>
+  <p>A comparação entre <b>nuvem e on-premise</b> reforça a escolha. O on-premise embute capex de hardware,
+  energia, refrigeração, redundância e — o maior custo escondido — <b>pessoal de operação</b>. A nuvem converte tudo
+  isso em opex previsível e elástico, dispensando o time de data center. Sob a premissa de orçamento apertado e ROI
+  rápido, a <b>nuvem única vence em TCO</b>.</p>
+  <div class="call key">
+    <b>Resultado:</b> TCO baixo e ROI rápido — exatamente o que o perfil do cliente exige, sem sacrificar segurança
+    nem capacidade analítica.
+  </div>
+</section>
+
+<section>
+  <h2><span class="nn">13</span>Extra — Concierge de Viagem por Voz</h2>
+  <div class="hrule"></div>
+  <p>Como diferencial — sugerido como extra ao escopo — propomos, em nível de <b>especificação funcional</b>, um
+  assistente de IA embarcado que melhora a experiência da viagem: recomenda lugares, ajusta a rota e conecta-se à agenda
+  do cliente, por voz. A peça-chave do desenho é <b>onde ele roda</b>: no <b>mesmo computador de bordo</b> que já
+  pré-processa a telemetria e detecta as emergências (Camada 1). Não há hardware novo — reaproveita-se um ativo que o
+  cliente já terá instalado em cada veículo.</p>
+  <ul class="bul">
+    <li><b>Hospedado na borda</b> — o computador de bordo já previsto passa a abrigar também a interface de voz e a chamada ao LLM+RAG; o custo é <b>marginal</b>, sem novo equipamento.</li>
+    <li><b>Voz → texto → voz</b> — reconhecimento de fala (STT — Speech-to-Text) e síntese de voz (TTS — Text-to-Speech) para uma interação natural ao volante.</li>
+    <li><b>LLM + RAG</b> — modelo de linguagem de grande porte (LLM — Large Language Model) consultando, via geração aumentada por recuperação (RAG — Retrieval-Augmented Generation), uma base local de pontos de interesse (POIs — Points of Interest) da cidade, com respostas ancoradas em dados reais.</li>
+    <li><b>Ação no veículo</b> — reprograma a rota no GPS (Global Positioning System) via API (Application Programming Interface — interface de programação), fechando o ciclo entre recomendação e ação.</li>
+    <li><b>Desacoplado do pipeline</b> — opera como componente opcional e independente; <b>não infla</b> o fluxo central de dados (borda → Kafka → lakehouse).</li>
+  </ul>
+  <div class="call">
+    Por rodar sobre um ativo já instalado e seguir <b>desacoplado</b> do núcleo de dados, o concierge entrega alto
+    impacto na percepção de valor com <b>esforço e custo marginal contidos</b> — permanecendo como especificação
+    funcional, não implementação.
+  </div>
+</section>
+
+<section>
+  <h2><span class="nn">14</span>Decisões-Chave — Síntese</h2>
+  <div class="hrule"></div>
+  <p>A tabela consolida as escolhas da consultoria em cada ponto do pipeline, com a alternativa descartada e a
+  justificativa — o <b>porquê de não</b> que o exercício pede.</p>
+  <table class="sint">
+    <tr><th>Decisão</th><th>Escolhido</th><th>Descartado</th><th>Por quê</th></tr>
+    <tr><td class="k">Arquitetura de dados</td><td class="ok">Kappa sobre Delta Lake</td><td class="no">Lambda</td><td>Evita duplicar a lógica batch/stream; Delta dá ACID às duas</td></tr>
+    <tr><td class="k">Processamento</td><td class="ok">Spark (Databricks)</td><td class="no">Hadoop/MapReduce; Flink</td><td>Legado e latência sub-segundo desnecessária na escala de cidade</td></tr>
+    <tr><td class="k">Plataforma</td><td class="ok">Databricks + Delta</td><td class="no">Dataproc avulso</td><td>Lakehouse nativo: consolida processamento, storage e ML</td></tr>
+    <tr><td class="k">Telemetria histórica</td><td class="ok">Delta Lake</td><td class="no">Cassandra</td><td>Cassandra superdimensiona para escala de cidade</td></tr>
+    <tr><td class="k">Infraestrutura</td><td class="ok">Nuvem única</td><td class="no">Híbrido / multi-cloud</td><td>Sem capex nem custo de sync; opex elástico</td></tr>
+    <tr><td class="k">Dashboard</td><td class="ok">Grafana + BI</td><td class="no">Só um deles</td><td>Papéis distintos: tempo real (Grafana) e financeiro (BI/DW)</td></tr>
+    <tr><td class="k">Concierge de voz</td><td class="ok">Incluído (spec)</td><td class="no">Deixar de fora</td><td>Alto retorno de imagem, baixo esforço por ser desenho funcional</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2><span class="nn">15</span>Conclusão</h2>
+  <div class="hrule"></div>
+  <p>Esta proposta fecha um ciclo de três etapas. Na Parte 1, o consórcio ganhou um banco transacional
+  (OLTP — Online Transaction Processing) que sustenta a operação diária de reservas, locações e cobranças. Na
+  Parte 2, esses dados foram consolidados em um Data Warehouse dimensional, que unificou as locadoras em uma visão
+  analítica única do negócio. A Parte 3 estende essa fundação para o mundo do <b>Big Data</b>: a frota conectada
+  passa a produzir dados continuamente, e a plataforma aqui proposta — borda, Kafka, lakehouse, armazenamento
+  poliglota e consumo — transforma esse fluxo em operação em tempo real, cobrança adaptativa e redução de prejuízo,
+  <b>sem descartar nada do que foi construído antes</b>.</p>
+
+  <p>A recomendação se sustenta em cinco atributos que respondem diretamente ao mandato do cliente:</p>
+  <ul class="bul">
+    <li><b>Simples</b> — um lakehouse no lugar de três motores e duas camadas; menos peças a operar.</li>
+    <li><b>Seguro</b> — criptografia, IAM, VPC e LGPD em região brasileira, sem necessidade de servidor próprio.</li>
+    <li><b>Econômico</b> — nuvem única, stack open-source, edge cortando banda e reúso do DW da Parte 2.</li>
+    <li><b>Completo</b> — tempo real, histórico, cobrança adaptativa, ML e o concierge de voz.</li>
+    <li><b>Bem dimensionado</b> — a escala de cidade é tratada como virtude de projeto, não como limitação.</li>
+  </ul>
+
+  <h3>Implantação em fases</h3>
+  <p>Coerente com a restrição de orçamento e a exigência de ROI rápido, a implantação é <b>incremental</b> — cada fase
+  entrega valor mensurável e valida o custo antes de liberar a seguinte:</p>
+  <ul class="bul">
+    <li><b>Fase 1 · Piloto</b> — subconjunto da frota com o pipeline mínimo (borda → Kafka → Spark/Delta → Grafana):
+    valida os gatilhos de emergência, o custo real de banda e a operação do painel ao vivo.</li>
+    <li><b>Fase 2 · Frota completa</b> — expansão da telemetria a todos os veículos, cobrança adaptativa integrada ao
+    DW e BI financeiro em produção — é aqui que o retorno financeiro do projeto se materializa.</li>
+    <li><b>Fase 3 · Inteligência</b> — ML preditivo (falhas e demanda), otimização de rotas e o concierge de voz como
+    diferencial de experiência — valor incremental sobre a mesma infraestrutura, sem novas peças.</li>
+  </ul>
+
+  <p>O resultado esperado responde, ponto a ponto, às três frentes de valor do negócio: a central <b>enxerga e
+  socorre</b> a frota em tempo real; a cobrança passa a refletir o <b>uso e o desgaste reais</b> de cada locação; e o
+  histórico analítico reduz prejuízo com seguradora, manutenção e veículo parado. Tudo isso com TCO contido por
+  desenho — a economia não é um ajuste posterior, é o critério que escolheu cada peça desta arquitetura.</p>
+
+  <div class="call key">
+    "Do dado operacional ao Big Data em tempo real — uma plataforma única, enxuta e segura para decidir e operar a frota."
+  </div>
+</section>
+
+<section style="break-before:page">
+  <h2><span class="nn">16</span>Glossário de Siglas e Termos</h2>
+  <div class="hrule"></div>
+  <h3>Siglas</h3>
+  <table>
+    <tr><th>Sigla</th><th>Significado</th></tr>
+    <tr><td class="k">ACID</td><td>Atomicidade, Consistência, Isolamento e Durabilidade — garantias de integridade de uma transação de banco de dados.</td></tr>
+    <tr><td class="k">API</td><td>Application Programming Interface — interface de programação que permite a integração entre sistemas.</td></tr>
+    <tr><td class="k">BI</td><td>Business Intelligence — ferramentas de análise e relatórios sobre dados do negócio.</td></tr>
+    <tr><td class="k">DW</td><td>Data Warehouse — repositório analítico que consolida dados de várias fontes em modelo dimensional.</td></tr>
+    <tr><td class="k">GPS</td><td>Global Positioning System — sistema de posicionamento por satélite.</td></tr>
+    <tr><td class="k">IAM</td><td>Identity and Access Management — gestão de identidade e controle de acesso na nuvem.</td></tr>
+    <tr><td class="k">LGPD</td><td>Lei Geral de Proteção de Dados (Lei nº 13.709/2018) — legislação brasileira de privacidade.</td></tr>
+    <tr><td class="k">LLM</td><td>Large Language Model — modelo de linguagem de grande porte (base dos assistentes de IA).</td></tr>
+    <tr><td class="k">ML</td><td>Machine Learning — aprendizado de máquina; modelos que aprendem padrões a partir de dados.</td></tr>
+    <tr><td class="k">MSK</td><td>Amazon Managed Streaming for Apache Kafka — serviço de Kafka gerenciado da AWS.</td></tr>
+    <tr><td class="k">NoSQL</td><td>"Not only SQL" — bancos de dados não relacionais (chave-valor, documentos, colunar, grafos).</td></tr>
+    <tr><td class="k">OLTP</td><td>Online Transaction Processing — banco transacional que sustenta a operação do dia a dia.</td></tr>
+    <tr><td class="k">POI</td><td>Point of Interest — ponto de interesse (restaurantes, museus etc.) em uma base geográfica.</td></tr>
+    <tr><td class="k">RAG</td><td>Retrieval-Augmented Generation — técnica que ancora as respostas de um LLM em uma base de dados real.</td></tr>
+    <tr><td class="k">REST</td><td>Representational State Transfer — padrão de comunicação de APIs sobre HTTP.</td></tr>
+    <tr><td class="k">ROI</td><td>Return on Investment — retorno sobre o investimento.</td></tr>
+    <tr><td class="k">STT / TTS</td><td>Speech-to-Text (reconhecimento de fala) / Text-to-Speech (síntese de voz).</td></tr>
+    <tr><td class="k">TCO</td><td>Total Cost of Ownership — custo total de propriedade (aquisição + operação + manutenção).</td></tr>
+    <tr><td class="k">TTL</td><td>Time to Live — tempo de vida de um dado, após o qual ele expira automaticamente.</td></tr>
+    <tr><td class="k">VPC</td><td>Virtual Private Cloud — rede virtual privada e isolada dentro da nuvem pública.</td></tr>
+  </table>
+
+  <h3>Termos técnicos</h3>
+  <table>
+    <tr><th>Termo</th><th>Definição</th></tr>
+    <tr><td class="k">Arquitetura Kappa / Lambda</td><td>Padrões de referência para Big Data: a Lambda mantém caminhos separados de batch e stream; a Kappa trata tudo como fluxo único (Seção 8).</td></tr>
+    <tr><td class="k">Arquitetura medalhão</td><td>Organização do lakehouse em camadas Bronze (bruto) → Silver (curado) → Gold (pronto para consumo).</td></tr>
+    <tr><td class="k">Batch / Streaming</td><td>Processamento em lote (agendado, sobre dados acumulados) / processamento contínuo do fluxo à medida que os dados chegam.</td></tr>
+    <tr><td class="k">Caminho quente / frio</td><td>Trajetos separados para dados urgentes (emergências) e dados de rotina (telemetria), cada um dimensionado ao seu custo.</td></tr>
+    <tr><td class="k">Capex / Opex</td><td>Despesa de capital (compra de ativos, ex.: servidores) / despesa operacional (pagamento pelo uso, ex.: nuvem).</td></tr>
+    <tr><td class="k">Downsampling</td><td>Redução da resolução do histórico antigo (ex.: de 1 leitura/s para 1/min) para economizar armazenamento.</td></tr>
+    <tr><td class="k">Edge computing</td><td>Computação na borda — processar os dados no próprio dispositivo (o computador de bordo) antes de enviá-los à nuvem.</td></tr>
+    <tr><td class="k">Instâncias spot</td><td>Capacidade ociosa da nuvem vendida com grande desconto, ideal para cargas interrompíveis como o batch.</td></tr>
+    <tr><td class="k">Lakehouse</td><td>Arquitetura que une o custo baixo do data lake às garantias transacionais do data warehouse (ex.: Delta Lake).</td></tr>
+    <tr><td class="k">Payload</td><td>Conteúdo útil de uma mensagem transmitida pela rede.</td></tr>
+    <tr><td class="k">Replay</td><td>Releitura do histórico retido no Kafka para reprocessar dados sem uma fonte adicional.</td></tr>
+    <tr><td class="k">Right-sizing</td><td>Dimensionar cada componente para a escala real do problema — nem falta, nem excesso.</td></tr>
+    <tr><td class="k">Telemetria</td><td>Medição remota: os dados de sensores que o veículo transmite (posição, velocidade, estado do motor etc.).</td></tr>
+  </table>
+
+  <p class="repo">Repositório do projeto: <b>github.com/tadeupires21-sketch/locadora-db</b></p>
+</section>
+
+</td></tr></tbody>
+</table>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Arquitetura de Referência — Proposta Executiva Big Data (Consórcio de Locadoras)</title>
+<style>
+  :root{
+    --edge:#6d28d9; --ingest:#0369a1; --proc:#b45309;
+    --store:#9d174d; --dw:#1e40af; --serve:#15803d; --extra:#7c2d12;
+    --onprem:#dc2626; --cloud:#2563eb; --hot:#ea580c;
+    --ink:#1f2937; --soft:#64748b; --line:#cbd5e1; --bg:#f8fafc;
+  }
+  *{box-sizing:border-box}
+  body{font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);
+       margin:0;padding:30px 34px;background:#fff;line-height:1.45}
+  h1{font-size:20px;margin:0 0 2px}
+  h2{font-size:13.5px;margin:24px 0 10px;text-transform:uppercase;letter-spacing:.5px;
+     color:var(--soft);border-bottom:1px solid var(--line);padding-bottom:5px}
+  .sub{color:var(--soft);font-size:12.5px;margin:0 0 4px}
+  .meta{font-size:11.5px;color:var(--soft);margin-bottom:8px}
+
+  .diagram{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--bg);
+           display:flex;gap:13px;margin-top:12px}
+  .flow{flex:1;display:flex;flex-direction:column;gap:10px}
+  .crosscut{width:158px;display:flex;flex-direction:column;gap:10px}
+
+  .layer{border-radius:10px;padding:10px 12px;color:#fff;position:relative}
+  .layer .lt{font-weight:700;font-size:12.5px;letter-spacing:.3px;margin-bottom:7px;
+             display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .layer .lt .n{background:rgba(255,255,255,.25);border-radius:50%;width:19px;height:19px;
+                display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex:none}
+  .lt .tech{margin-left:auto;font-size:10.5px;font-weight:600;background:#fff;color:var(--ink);
+            border-radius:20px;padding:2px 9px}
+  .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .chip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);
+        border-radius:6px;padding:3px 8px;font-size:10.6px;white-space:nowrap}
+  .chip b{font-weight:700}
+  .chip.hot{background:var(--hot);border-color:#fdba74}
+
+  .l-edge{background:var(--edge)} .l-ingest{background:var(--ingest)}
+  .l-proc{background:var(--proc)} .l-store{background:var(--store)}
+  .l-dw{background:var(--dw)} .l-serve{background:var(--serve)} .l-extra{background:var(--extra)}
+
+  .arrow{text-align:center;color:var(--soft);font-size:14px;line-height:.4;margin:-3px 0}
+
+  .split{display:flex;gap:8px;margin-top:2px}
+  .split .half{flex:1;border-radius:8px;padding:8px 9px;background:rgba(255,255,255,.12);
+               border:1px dashed rgba(255,255,255,.5)}
+  .split .half .tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+                    display:inline-block;padding:1px 7px;border-radius:20px;margin-bottom:6px}
+  .tag-hot{background:var(--hot);color:#fff}
+  .tag-cold{background:#fff;color:var(--ingest)}
+  .tag-onprem{background:var(--onprem);color:#fff}
+  .tag-cloud{background:#fff;color:var(--cloud)}
+
+  .cc{border-radius:10px;padding:9px 10px;background:#fff;border:1px solid var(--line)}
+  .cc h4{margin:0 0 6px;font-size:11px;color:var(--ink)}
+  .cc ul{margin:0;padding-left:14px}
+  .cc li{font-size:10.3px;color:#374151;margin-bottom:4px;line-height:1.3}
+  .cc .bar{height:4px;border-radius:4px;margin:-1px -1px 7px;background:linear-gradient(90deg,#475569,#94a3b8)}
+
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:11.2px}
+  th,td{text-align:left;padding:6px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#f1f5f9;color:var(--soft);font-size:10.3px;text-transform:uppercase;letter-spacing:.4px}
+  td.k{font-weight:700;white-space:nowrap;width:170px}
+  td.k .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:middle}
+  td .alt{color:var(--soft);font-size:10.3px}
+
+  .callout{margin-top:12px;font-size:11.5px;color:#374151;border-radius:8px;padding:10px 13px}
+  .callout b:first-child{display:block;margin-bottom:3px}
+  .c-red{background:#fef2f2;border:1px solid #fecaca} .c-red b{color:var(--onprem)}
+  .c-blue{background:#eff6ff;border:1px solid #bfdbfe} .c-blue b{color:var(--cloud)}
+  .c-amber{background:#fffbeb;border:1px solid #fde68a} .c-amber b{color:#b45309}
+
+  .deliver{display:flex;gap:10px;margin-top:8px}
+  .deliver .d{flex:1;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:11px}
+  .deliver .d b{display:block;font-size:11.5px;margin-bottom:3px}
+  .deliver .d span{color:var(--soft)}
+
+  .note{font-size:11px;color:var(--soft);margin-top:16px;border-top:1px solid var(--line);padding-top:9px}
+  @media print{ body{padding:12px 14px} .diagram{break-inside:avoid} h2{break-after:avoid} table{break-inside:avoid} }
+  @page{size:A4 portrait;margin:11mm}
+</style>
+</head>
+<body>
+
+<h1>Arquitetura de Referência — Proposta Executiva DW + Big Data</h1>
+<p class="sub"><b>Consórcio de 6 locadoras</b> · frota autônoma e conectada · expansão da solução DW (Parte 2) · Tarefa de Big Data (Parte 3)</p>
+<p class="meta">Rascunho v0.2 para alinhamento do grupo · stack nomeada conforme sugestões do enunciado · sujeito a decisão final do grupo</p>
+
+<h2>Pipeline em camadas — da frota ao dashboard</h2>
+
+<div class="diagram">
+  <div class="flow">
+
+    <div class="layer l-edge">
+      <div class="lt"><span class="n">1</span> EDGE · Computador de bordo <span class="tech">MQTT + agente embarcado</span></div>
+      <div class="chips">
+        <span class="chip"><b>Fluxo de rotina:</b> telemetria agregada ~1s, formato compacto (Protobuf)</span>
+        <span class="chip hot"><b>Evento crítico:</b> payload bruto imediato (colisão, pane)</span>
+        <span class="chip">Vídeo NUNCA sobe bruto — banda móvel é cara e finita</span>
+      </div>
+    </div>
+    <div class="arrow">▼ &nbsp; rede móvel (priorização de alertas)</div>
+
+    <div class="layer l-ingest">
+      <div class="lt"><span class="n">2</span> INGESTÃO · Barramento de eventos <span class="tech">Apache Kafka</span></div>
+      <div class="split">
+        <div class="half">
+          <span class="tag tag-cold">tópico telemetria.rotina</span>
+          <div class="chips"><span class="chip">Alto volume, fluxo contínuo</span></div>
+        </div>
+        <div class="half">
+          <span class="tag tag-hot">tópico alertas.criticos</span>
+          <div class="chips"><span class="chip">Isolado — sem fila atrás da telemetria</span></div>
+        </div>
+      </div>
+      <div class="chips" style="margin-top:6px">
+        <span class="chip"><b>Partição por vehicle_id</b> → ordenação estrita por veículo + timestamp</span>
+        <span class="chip">Tolerância a falhas · replay · sem perda de pacote</span>
+      </div>
+    </div>
+    <div class="arrow">▼</div>
+
+    <div class="layer l-proc">
+      <div class="lt"><span class="n">3</span> PROCESSAMENTO · 3 caminhos <span class="tech">Spark · Flink · Hadoop/MapReduce</span></div>
+      <div class="chips">
+        <span class="chip hot"><b>Hot path (emergências):</b> Spark Streaming — alertas de pane/colisão</span>
+        <span class="chip"><b>Análise contínua:</b> Flink — janelas temporais, rotas, congestionamento</span>
+        <span class="chip"><b>Batch:</b> Hadoop/MapReduce (ou Spark) — km rodada, tempo de uso, previsão de falhas</span>
+      </div>
+      <div class="chips" style="margin-top:5px">
+        <span class="chip"><b>Arquitetura Lambda vs Kappa</b> — comparação formal no documento</span>
+        <span class="chip"><b>Delta Lake</b> garante ACID entre batch e streaming</span>
+      </div>
+    </div>
+    <div class="arrow">▼</div>
+
+    <div class="layer l-store">
+      <div class="lt"><span class="n">4</span> PERSISTÊNCIA POLIGLOTA (NoSQL multi-model) <span class="tech">Cassandra · MongoDB · Redis</span></div>
+      <div class="chips">
+        <span class="chip"><b>Cassandra / Astra DB</b> (wide-column): telemetria contínua — escrita massiva distribuída</span>
+        <span class="chip"><b>MongoDB Atlas</b> (documentos): viagens, sinistros, inspeção de sensores</span>
+        <span class="chip"><b>Redis</b> (key-value em memória): cache de rotas + status da frota em tempo real</span>
+        <span class="chip"><b>Delta Lake</b> sobre object storage: lakehouse histórico</span>
+      </div>
+    </div>
+    <div class="arrow">▼ &nbsp; dados conformados</div>
+
+    <div class="layer l-dw">
+      <div class="lt"><span class="n">5</span> DW &amp; DATA MARTS — núcleo SQL (Parte 2) <span class="tech">PostgreSQL (estrela)</span></div>
+      <div class="split">
+        <div class="half">
+          <span class="tag tag-onprem">Data Center do consórcio</span>
+          <div class="chips"><span class="chip">Cadastros sensíveis · financeiro · cobrança (ACID)</span></div>
+        </div>
+        <div class="half">
+          <span class="tag tag-cloud">Cloud</span>
+          <div class="chips"><span class="chip">Marts analíticos · histórico agregado · OLAP/BI</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="arrow">▼</div>
+
+    <div class="layer l-serve">
+      <div class="lt"><span class="n">6</span> DASHBOARD &amp; ANALYTICS <span class="tech">Grafana / Power BI + ML</span></div>
+      <div class="chips">
+        <span class="chip"><b>Tempo real</b> (via Redis/Flink): frota, viagens em andamento, emergências</span>
+        <span class="chip"><b>Histórico</b> (via DW): reservas, locações, cobranças, financeiro, oficina</span>
+        <span class="chip">Cobrança automática pós-devolução (km, tempo, condução, multas)</span>
+        <span class="chip">ML: previsão de falhas mecânicas, demanda por região</span>
+      </div>
+    </div>
+    <div class="arrow">▼</div>
+
+    <div class="layer l-extra">
+      <div class="lt"><span class="n">7</span> EXTRA · Concierge de viagem por voz <span class="tech">LLM + RAG + STT/TTS</span></div>
+      <div class="chips">
+        <span class="chip">Assistente IA por voz embarcado</span>
+        <span class="chip">RAG sobre base local de POIs/turismo da cidade</span>
+        <span class="chip">Integra agenda do cliente + ajusta rota no GPS</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="crosscut">
+    <div class="cc">
+      <div class="bar"></div>
+      <h4>Atravessa tudo</h4>
+      <ul>
+        <li><b>Segurança &amp; LGPD</b> — anonimização, sigilo</li>
+        <li><b>Orquestração</b> de jobs (Airflow)</li>
+        <li><b>Governança</b> e catálogo de dados</li>
+        <li><b>Custos cloud</b> — citar quando couber (exigência do enunciado)</li>
+      </ul>
+    </div>
+    <div class="cc">
+      <h4>Hot × Cold path</h4>
+      <ul>
+        <li><span style="color:var(--hot)">●</span> <b>Hot:</b> emergência — segundos importam</li>
+        <li><span style="color:var(--ingest)">●</span> <b>Cold:</b> telemetria, histórico, relatórios</li>
+        <li>Separação começa no <b>edge</b> e segue até o dashboard</li>
+      </ul>
+    </div>
+    <div class="cc">
+      <h4>Ambientes de estudo (free tier)</h4>
+      <ul>
+        <li>GCP Dataproc / Flink Playground</li>
+        <li>Databricks Free (Delta Lake)</li>
+        <li>MongoDB Atlas · Astra DB · Redis Cloud</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h2>Justificativa-resumo por camada (base da defesa oral)</h2>
+<table>
+  <tr><th>Camada</th><th>Por que esta tecnologia</th><th>Alternativa descartada (e por quê)</th></tr>
+  <tr><td class="k"><span class="dot" style="background:var(--edge)"></span>1 · Edge</td>
+      <td>Agregação local economiza banda móvel (cara e finita); só evento crítico sobe bruto</td>
+      <td class="alt">Transmitir tudo bruto: inviável — vídeo 360° de milhares de carros saturaria a rede</td></tr>
+  <tr><td class="k"><span class="dot" style="background:var(--ingest)"></span>2 · Kafka</td>
+      <td>Pub/Sub desacopla frota dos consumidores; partição por veículo garante ordenação estrita; replay e tolerância a falhas</td>
+      <td class="alt">REST direto ao banco: gargalo de concorrência e perda de pacotes sob pico</td></tr>
+  <tr><td class="k"><span class="dot" style="background:var(--proc)"></span>3 · Spark + Flink</td>
+      <td>Spark Streaming p/ alertas (hot path, ecossistema maduro); Flink p/ janelas de baixíssima latência; batch p/ consolidação histórica</td>
+      <td class="alt">Só MapReduce clássico: latência de minutos não atende emergência; Storm: comunidade em declínio</td></tr>
+  <tr><td class="k"><span class="dot" style="background:var(--store)"></span>4 · Polyglot NoSQL</td>
+      <td>Cada padrão de acesso no banco certo: escrita massiva (Cassandra), semiestruturado (MongoDB), leitura sub-ms (Redis)</td>
+      <td class="alt">Um único banco para tudo: ou não escala a escrita, ou não serve o dashboard em tempo real</td></tr>
+  <tr><td class="k"><span class="dot" style="background:var(--dw)"></span>5 · DW SQL</td>
+      <td>Reaproveita o DW estrela da Parte 2; ACID p/ financeiro e cobrança; OLAP consolidado</td>
+      <td class="alt">Jogar tudo no lake: perderia consistência transacional do financeiro e o investimento já feito</td></tr>
+  <tr><td class="k"><span class="dot" style="background:var(--serve)"></span>6 · Dashboard</td>
+      <td>Grafana nativo p/ série temporal/tempo real; BI corporativo p/ visão financeira sobre o DW</td>
+      <td class="alt">Só BI tradicional: refresh em minutos não serve monitoramento de emergências</td></tr>
+  <tr><td class="k"><span class="dot" style="background:var(--extra)"></span>7 · Concierge (extra)</td>
+      <td>LLM com RAG sobre base local de POIs; voz via STT/TTS; ação no GPS via API do veículo</td>
+      <td class="alt">Regras fixas/menu IVR: não atende pedido em linguagem natural do exemplo do enunciado</td></tr>
+</table>
+
+<div class="callout c-amber">
+  <b>Decisão central a defender: Lambda vs Kappa</b>
+  O enunciado pede comparação formal. Caminho sugerido: <b>Lambda</b> (camadas batch + speed separadas) reflete bem os 3 tipos de
+  processamento pedidos, mas tem duplicação de lógica; <b>Kappa</b> (tudo como stream, reprocesso via replay do Kafka) é mais simples de operar.
+  Posição defensável: <b>Lambda "unificada" via lakehouse</b> — Delta Lake como camada única de armazenamento com garantia ACID
+  entre batch e streaming (exatamente o exemplo citado pelo professor). O grupo precisa ratificar.
+</div>
+
+<div class="callout c-blue">
+  <b>Onde roda: cloud + Data Center do consórcio</b>
+  Enunciado admite os dois ("na nuvem, ou no Data Center do consórcio"). Proposta: dados sensíveis/financeiros no data center
+  (herda o DW da Parte 2); ingestão, processamento elástico e NoSQL gerenciado na nuvem (free tiers sugeridos servem de prova de conceito).
+  Citar custos embutidos da parte cloud — exigência explícita.
+</div>
+
+<h2>Entregáveis (3 — atenção ao terceiro)</h2>
+<div class="deliver">
+  <div class="d"><b>1 · Proposta Executiva (PDF)</b><span>Texto com pipeline completo, dashboard, justificativa de cada tecnologia (MapReduce, Spark, Flink, Lambda/Kappa, NoSQL) + custos. Postar no AVA@UFRJ.</span></div>
+  <div class="d"><b>2 · Slides (PDF)</b><span>Abertura com nomes+DRE · 2º slide: índice · último: conclusões. Base da defesa oral (cobre Parte 2 + Parte 3).</span></div>
+  <div class="d"><b>3 · E-mail + GitHub</b><span>E-mail a milton@matematica.ufrj.br com folha de rosto + link do repositório GitHub (docs 1 e 2 + README descrevendo a estrutura).</span></div>
+</div>
+
+<div class="callout c-red">
+  <b>Regras que zeram nota</b>
+  Um membro posta os PDFs; <b>todos os demais</b> postam folha de rosto no AVA (quem não postar nada fica com ZERO).
+  Todos os arquivos com identificação completa (nomes + DRE) — sem isso não são considerados.
+</div>
+
+<p class="note">
+  Rascunho v0.2 · papel do grupo: consultoria de tecnologia recomendando a stack — não implementar.
+  Pendências para o grupo ratificar: (a) posição Lambda × Kappa; (b) Databricks vs GCP Dataproc como plataforma de processamento;
+  (c) ferramenta do dashboard (Grafana vs Power BI vs ambos); (d) incluir ou não o extra do concierge; (e) divisão de seções entre os membros.
+</p>
+
+</body>
+</html>

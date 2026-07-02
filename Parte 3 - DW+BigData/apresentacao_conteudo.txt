@@ -1,0 +1,299 @@
+PROPOSTA EXECUTIVA — DW + BIG DATA · FROTA CONECTADA
+Conteúdo dos slides (texto puro para formatação em outro software)
+Equipe: Tadeu Belfort Neto (DRE 119034813) · Vicente Alves (DRE 1220044148) · João Pedro de Lacerda (DRE 116076670)
+====================================================================
+
+
+--------------------------------------------------------------------
+SLIDE 1 — CAPA
+--------------------------------------------------------------------
+Linha superior: Big Data · Solução Híbrida DW + Big Data
+Subtítulo superior: Proposta Executiva · OLTP → DW → Big Data · Frota Conectada
+
+TÍTULO: Solução Híbrida de Data Warehouse e Big Data
+
+Subtítulo: Operacionalizar uma frota conectada de locadoras em escala de
+cidade — expansão da solução de Data Warehouse da Parte 2.
+
+Equipe:
+- Tadeu Belfort Neto · DRE 119034813
+- Vicente Alves · DRE 1220044148
+- João Pedro de Lacerda · DRE 116076670
+
+Rodapé: Databricks · Delta Lake · Apache Kafka · PostgreSQL
+Local/data: Rio de Janeiro · 2026
+
+
+--------------------------------------------------------------------
+SLIDE 2 — ÍNDICE  (00 / Agenda)
+--------------------------------------------------------------------
+01  Contexto e problema de negócio
+02  Objetivos da solução
+03  Arquitetura de referência
+04  Coleta na borda: rotina × emergência
+05  Ingestão de eventos (Kafka)
+06  Processamento: lakehouse unificado
+07  Armazenamento poliglota
+08  Analytics, dashboards e IA
+09  Nuvem e segurança
+10  Estratégia de redução de custos
+11  Extra: concierge de viagem por voz
+12  Decisões-chave e conclusão
+
+
+--------------------------------------------------------------------
+SLIDE 3 — CONTEXTO  (01 / Contexto)
+--------------------------------------------------------------------
+TÍTULO: O problema de negócio
+
+Texto de abertura: O consórcio quer automatizar e conectar a frota — tempo
+real, emergências e cobrança adaptativa — com um perfil de cliente bem definido:
+
+Bullets:
+- Baixa capacidade de investimento e necessidade de retorno rápido — o TCO é o critério que decide.
+- Escala de cidade, não de megacidade — pátios de uma mesma cidade; não há por que superdimensionar.
+- Frota gera fluxo constante de dados — exige infraestrutura robusta de ingestão e armazenamento.
+- Já existe um Data Warehouse (Parte 2) a ser reaproveitado, não descartado.
+
+Frase de fecho: Mandato da consultoria: a stack mais simples e segura possível dentro do orçamento.
+
+
+--------------------------------------------------------------------
+SLIDE 4 — OBJETIVOS  (02 / Objetivos)
+--------------------------------------------------------------------
+TÍTULO: O que a solução precisa entregar
+
+Caixa 1 — Operação em tempo real:
+- Acompanhamento da situação da frota
+- Respostas imediatas em emergências
+- Mais clientes atendidos sem expandir a frota
+
+Caixa 2 — Resultado financeiro:
+- Cobrança automática e adaptativa por desgaste
+- Menos custo com seguradoras
+- Menos prejuízo com veículo parado em manutenção
+
+Frase de fecho: Tudo respeitando a limitação financeira — princípio que guia cada escolha.
+
+
+--------------------------------------------------------------------
+SLIDE 5 — ARQUITETURA  (03 / Arquitetura)
+--------------------------------------------------------------------
+TÍTULO: Visão geral do pipeline
+
+Diagrama (5 estágios, fluxo da esquerda para a direita, setas verdes):
+
+1 · Borda  [Computador de bordo]
+   - Pré-agrega telemetria (~1s)
+   - Vídeo só em emergência
+   - Botão de emergência
+→
+2 · Ingestão  [Apache Kafka]
+   - Tópicos rotina × alertas
+   - Partição por vehicle_id
+   - Ordem estrita + replay
+→
+3 · Lakehouse  [Databricks + Delta]
+   - Spark: batch + stream
+   - Bronze → Silver → Gold
+   - ACID unificado
+→
+4 · Serving  [Redis · Mongo · Postgres]
+   - Redis: estado ao vivo
+   - Mongo: docs operacionais
+   - Postgres: DW (Parte 2)
+→
+5 · Consumo  [Grafana · BI · ML]
+   - Dashboard tempo real
+   - BI financeiro
+   - ML preditivo
+
+Faixa inferior (3 caixas):
+- Nuvem única — stack gerenciada (opex), sem on-premise
+- Segurança — criptografia · IAM · VPC · LGPD em região BR
+- Orquestração — Databricks Workflows · governança
+
+Frase de fecho: Cinco camadas, do carro ao dashboard — caminho quente (emergência)
+e frio (rotina) separados desde a borda.
+
+
+--------------------------------------------------------------------
+SLIDE 6 — BORDA  (04 / Camada 1 · Borda)
+--------------------------------------------------------------------
+TÍTULO: Coleta na borda: rotina × emergência
+
+Caixa 1 — Dados de rotina · caminho frio:
+- Telemetria compactada a cada ~1s
+- Posição e situação geral do veículo
+- Base da cobrança por desgaste
+- Transmissão barata e espaçada
+
+Caixa 2 — Dados emergenciais · caminho quente:
+- Vídeo + dados só em gatilho (caro)
+- a) Problema interno → alerta + snapshot
+- b) Risco externo → clipe + streaming ao vivo
+- c) Botão do motorista → alerta máximo
+
+Frase de fecho: Edge computing é a maior alavanca de custo: pré-processar a bordo
+elimina o gasto recorrente mais caro — a banda móvel.
+
+
+--------------------------------------------------------------------
+SLIDE 7 — KAFKA  (05 / Camada 2 · Ingestão)
+--------------------------------------------------------------------
+TÍTULO: Ingestão de eventos: Apache Kafka
+
+Texto de abertura: Um barramento de eventos gerenciado desacopla a frota dos
+consumidores e absorve picos sem perder dados.
+
+Bullets:
+- Tópicos separados — alerta de emergência nunca fica na fila atrás da telemetria.
+- Partição por vehicle_id — garante ordenação estrita dos eventos por veículo + timestamp sob carga.
+- Tolerância a falhas e replay — reprocessamento histórico sem fonte adicional.
+- Gerenciado (MSK / Confluent) — zero servidor Kafka para a equipe operar.
+
+Frase de fecho: Por que não REST direto ao banco: gargalo de concorrência e perda de eventos no pico.
+
+
+--------------------------------------------------------------------
+SLIDE 8 — LAKEHOUSE  (06 / Camada 3 · Processamento)
+--------------------------------------------------------------------
+TÍTULO: Lakehouse unificado — um motor, não três
+
+Bullets:
+- Databricks + Spark Structured Streaming — um motor para batch e stream, um só código.
+- Delta Lake medalhão — Bronze → Silver (anonimizado) → Gold, com ACID entre batch e stream.
+- Modelo Kappa — reprocesso por replay; sem a duplicação de lógica da arquitetura Lambda.
+
+Bloco comparativo:
+MANTIDO (✓):
+- Spark (batch + stream) sobre Delta Lake
+DESCARTADO · right-sizing (✕):
+- Hadoop/MapReduce — legado
+- Flink — latência sub-segundo não se justifica em escala de cidade
+
+Frase de fecho: Menos peças, menos código, menos a operar — sem perder capacidade analítica.
+
+
+--------------------------------------------------------------------
+SLIDE 9 — ARMAZENAMENTO  (07 / Camada 4 · Armazenamento)
+--------------------------------------------------------------------
+TÍTULO: Poliglota — cada dado no lugar certo
+
+Tabela (Tecnologia | Papel | Por que):
+- Redis            | Estado ao vivo da frota + cache de rotas       | Leitura sub-milissegundo para o tempo real
+- MongoDB Atlas    | Documentos: viagens, sinistros, inspeção        | Schema flexível; gerenciado
+- Delta Lake       | Histórico analítico de telemetria               | Barato, escalável e com ACID
+- PostgreSQL (DW)  | Financeiro e cobrança — reuso da Parte 2        | ACID estrito; zero licença nova
+
+Frase de fecho: Descartamos Cassandra: para escala de cidade seria superdimensionar
+— o Delta Lake cobre a telemetria com menos custo.
+
+
+--------------------------------------------------------------------
+SLIDE 10 — ANALYTICS  (08 / Camada 5 · Consumo)
+--------------------------------------------------------------------
+TÍTULO: Analytics, dashboards e IA
+
+Caixa 1 — Tempo real · Grafana:
+- Frota: ativos, circulação, manutenção
+- Viagens em andamento e emergências
+- Alimentado por Redis / streaming
+
+Caixa 2 — Negócio · BI sobre o DW:
+- Reservas, locações, cobranças, financeiro
+- Metabase (open-source) ou Power BI
+- Cobrança adaptativa pós-devolução
+
+Caixa 3 — Inteligência · ML:
+- Previsão de falhas mecânicas
+- Previsão de demanda por região
+- Databricks ML / MLflow
+
+Frase de fecho: Cobre os quatro tipos de análise — descritiva, diagnóstica,
+preditiva e prescritiva — sobre uma base única.
+
+
+--------------------------------------------------------------------
+SLIDE 11 — NUVEM & SEGURANÇA  (09 / Infraestrutura)
+--------------------------------------------------------------------
+TÍTULO: Nuvem única e segurança
+
+Caixa 1 — Por que nuvem única (sem híbrido):
+- Opex, não capex — sem comprar hardware
+- Sem equipe de data center para manter
+- Elimina a sincronização on-prem ↔ cloud
+- Stack portável entre nuvens
+
+Caixa 2 — Como mantemos a segurança:
+- Criptografia em repouso e em trânsito
+- IAM de menor privilégio + VPC
+- LGPD: região BR + anonimização na Silver
+- Auditoria e políticas de retenção
+
+Frase de fecho: Sigilo não exige servidor próprio: controles cloud-native +
+residência de dados no Brasil bastam.
+
+
+--------------------------------------------------------------------
+SLIDE 12 — CUSTOS  (10 / Estratégia)
+--------------------------------------------------------------------
+TÍTULO: Redução de custos — o fio condutor
+
+Seis alavancas (título + descrição):
+- Edge corta a banda — Só emergência sobe vídeo; elimina o maior custo recorrente
+- Open-source primeiro — PostgreSQL, Kafka, Spark, Grafana; zero licença
+- Batch em instâncias spot — Só o hot path fica 24/7; ML é pontual
+- Armazenamento em camadas — Hot (Redis) → warm (Mongo) → cold (Delta) com TTL
+- Reaproveita o DW da Parte 2 — Sem reescrever nem relicenciar o que já existe
+- Right-sizing como princípio — Infra de cidade, não de megacidade
+
+Frase de fecho: Resultado: TCO baixo e ROI rápido — exatamente o que o perfil do cliente exige.
+
+
+--------------------------------------------------------------------
+SLIDE 13 — EXTRA  (11 / Extra)
+--------------------------------------------------------------------
+TÍTULO: Concierge de viagem por voz
+
+Texto de abertura: Assistente de IA embarcado que melhora a experiência da viagem
+— recomenda lugares, ajusta a rota, conecta-se à agenda do cliente.
+
+Bullets:
+- Voz → texto → voz: reconhecimento de fala (STT) e síntese (TTS).
+- LLM + RAG sobre base local de pontos de interesse da cidade.
+- Ação no veículo: reprograma a rota no GPS via API.
+- Entra como módulo opcional, sem inchar o pipeline central.
+
+Frase de fecho: Alto impacto na percepção de valor; esforço contido por ser desenho funcional.
+
+
+--------------------------------------------------------------------
+SLIDE 14 — CONCLUSÃO  (12 / Conclusão)
+--------------------------------------------------------------------
+TÍTULO: Por que esta é a recomendação
+
+Bullets (com marca ✓):
+- Simples: um lakehouse no lugar de três motores e duas camadas — menos a operar.
+- Seguro: criptografia, IAM, VPC e LGPD em região BR — sem servidor próprio.
+- Econômico: nuvem única, open-source, edge cortando banda e reuso do DW da Parte 2.
+- Completo: tempo real, histórico, cobrança adaptativa, ML e concierge de voz.
+- Bem dimensionado: escala de cidade tratada como virtude, não limitação.
+
+Citação de fecho: "Do dado operacional ao Big Data em tempo real — uma plataforma
+única, enxuta e segura para decidir e operar a frota."
+
+Rodapé: Equipe Tadeu Belfort Neto · Vicente Alves · João Pedro de Lacerda
+Repositório: github.com/tadeupires21-sketch/locadora-db
+
+
+====================================================================
+NOTAS DE PALETA (para casar a formatação)
+- Verde escuro #0F766E — títulos
+- Verde claro #14B8A6 — diagramas, setas, destaques
+- Grafite #1F2937 — texto do corpo
+- Cinza claro #E5E7EB — caixas de informação
+- Branco #FFFFFF — fundo
+- Máx. 6 bullets por slide · fonte Roboto/Inter/Calibri
+- Títulos 28–34 pt · corpo 18–22 pt
+====================================================================
