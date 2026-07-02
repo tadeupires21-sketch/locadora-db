@@ -7,7 +7,7 @@ Projeto desenvolvido para a disciplina **Big Data (MAE016)** — UFRJ · Institu
 | Integrante | DRE |
 |------------|-----|
 | Tadeu Belfort Neto | 119034813 |
-| Vicente Alves | 1220044148 |
+| Vicente Alves | 120044148 |
 | João Pedro de Lacerda | 116076670 |
 
 O projeto foi desenvolvido em três partes: o banco transacional (**OLTP**) que

@@ -1,6 +1,6 @@
-PROPOSTA EXECUTIVA — DW + BIG DATA · FROTA CONECTADA
+﻿PROPOSTA EXECUTIVA — DW + BIG DATA · FROTA CONECTADA
 Conteúdo dos slides (texto puro para formatação em outro software)
-Equipe: Tadeu Belfort Neto (DRE 119034813) · Vicente Alves (DRE 1220044148) · João Pedro de Lacerda (DRE 116076670)
+Equipe: Tadeu Belfort Neto (DRE 119034813) · Vicente Alves (DRE 120044148) · João Pedro de Lacerda (DRE 116076670)
 ====================================================================
 
 
@@ -17,7 +17,7 @@ cidade — expansão da solução de Data Warehouse da Parte 2.
 
 Equipe:
 - Tadeu Belfort Neto · DRE 119034813
-- Vicente Alves · DRE 1220044148
+- Vicente Alves · DRE 120044148
 - João Pedro de Lacerda · DRE 116076670
 
 Rodapé: Databricks · Delta Lake · Apache Kafka · PostgreSQL
