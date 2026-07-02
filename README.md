@@ -39,7 +39,6 @@ conectada com telemetria em tempo real.
 ├── Parte 3 - DW+BigData/        # Proposta Executiva de Big Data (frota conectada)
 │   ├── proposta_executiva.pdf              # Documento 1 — Proposta Executiva (entregável)
 │   ├── Apresentacao Completa DW - Big Data.pdf  # Slides da defesa (Parte 2 + Parte 3)
-│   ├── apresentacao.pdf / .html            # Slides da Parte 3
 │   ├── arquitetura_referencia.pdf / .html  # Diagrama da arquitetura de referência
 │   ├── decisoes_do_grupo.pdf / .html       # Registro das decisões de tecnologia
 │   └── briefing_estimativa_custos.pdf / .html  # Briefing de custos de nuvem
