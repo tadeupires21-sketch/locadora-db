@@ -148,17 +148,15 @@
 <section>
   <h2><span class="nn">1</span>Sumário Executivo</h2>
   <div class="hrule"></div>
-  <p>O consórcio de locadoras deseja evoluir de uma operação tradicional para uma <b>frota conectada</b>,
-  capaz de ser acompanhada em tempo real, de reagir a emergências e de cobrar o cliente de forma adaptativa
-  conforme o uso e o desgaste do veículo. Esta proposta, elaborada na posição de <b>consultoria de tecnologia</b>,
-  recomenda e justifica a stack para cada etapa do pipeline de dados — e registra explicitamente o motivo de
-  <b>não</b> adotar as alternativas concorrentes.</p>
+  <p>O consórcio precisa operar uma <b>frota conectada</b>: acompanhar cada veículo em tempo real, responder a
+  emergências e cobrar conforme o uso e o desgaste reais. Esta proposta, elaborada na posição de
+  <b>consultoria de tecnologia</b>, recomenda a plataforma de dados para esse objetivo — e justifica cada escolha,
+  incluindo o motivo de <b>não</b> adotar as alternativas concorrentes.</p>
 
-  <p>A solução recomendada é uma <b>plataforma híbrida que combina Data Warehouse (DW) e Big Data</b>: o DW dimensional
-  já construído na Parte 2 (PostgreSQL) é preservado como fonte oficial do financeiro, e ao seu redor montamos um
-  pipeline de Big Data — borda → ingestão → processamento → armazenamento → consumo — para o fluxo contínuo de
-  telemetria da frota. O termo "híbrida" refere-se a essa convivência <b>DW + Big Data</b>; a infraestrutura
-  recomendada é de <b>nuvem única</b>, não de nuvem híbrida.</p>
+  <p>A solução preserva o <b>Data Warehouse (DW)</b> da Parte 2 (PostgreSQL) como fonte oficial do financeiro e
+  adiciona um <b>lakehouse</b> para o fluxo contínuo de telemetria, no caminho borda → ingestão → processamento →
+  armazenamento → consumo. É essa convivência <b>DW + lakehouse</b> que dá o nome "solução híbrida"; a
+  infraestrutura recomendada é de <b>nuvem única</b>, não de nuvem híbrida.</p>
 
   <div class="call key">
     <div class="ct">Recomendação da consultoria</div>
@@ -169,10 +167,12 @@
     (TCO — Total Cost of Ownership)</b> com a stack mais simples e segura possível dentro do orçamento.
   </div>
 
-  <p>A frota gera um fluxo constante de dados que exige infraestrutura robusta de ingestão e armazenamento, mas o
-  perfil do cliente — <b>baixa capacidade de investimento e necessidade de retorno rápido</b> — impõe disciplina de
-  custo em todas as camadas. Por isso, <b>redução de custo é um critério de projeto explícito</b> desta proposta,
-  e não apenas uma observação ao final.</p>
+  <p>O impacto esperado é direto: alerta de emergência na central em <b>menos de 10 segundos</b>, cobrança
+  adaptativa apurada logo após a devolução e menos prejuízo com seguradora e veículo parado. Como o cliente tem
+  <b>baixa capacidade de investimento e necessidade de retorno rápido</b>, a redução de custo é um
+  <b>critério de projeto explícito</b> em todas as camadas. <b>Pedido desta proposta:</b> aprovar um
+  <b>piloto de ~100 veículos por 3 meses</b> para validar gatilhos, latências e o custo real por veículo antes
+  da expansão (roadmap na Seção 15).</p>
 </section>
 
 <section>
@@ -241,16 +241,23 @@
   são <b>event-driven e raros</b>, transmitidos apenas no gatilho. A tabela abaixo ancora três cenários de frota;
   o intermediário é tratado como baseline.</p>
 
+  <div class="call">
+    <b>Origem e incerteza das premissas:</b> os valores são <b>estimativas de engenharia</b> (ordem de grandeza),
+    derivadas de perfis típicos de telemetria veicular — não são medições. A maior sensibilidade de custo está na
+    <b>banda móvel</b>; o piloto (Seção 15) mede os números reais antes de qualquer expansão.
+  </div>
+
   <table>
     <tr><th>Cenário (frota ativa)</th><th class="num">Pico de mensagens</th><th class="num">Vazão de ingestão</th>
-        <th class="num">Ingestão bruta/dia</th><th class="num">Ingestão bruta/mês</th></tr>
+        <th class="num">Ingestão bruta/dia</th><th class="num">Ingestão bruta/mês</th><th>Custo relativo de banda</th></tr>
     <tr><td class="k">1.000 veículos</td><td class="num">~1.000 msg/s</td><td class="num">~1,5 MB/s</td>
-        <td class="num">~65 GB</td><td class="num">~1,9 TB</td></tr>
+        <td class="num">~65 GB</td><td class="num">~1,9 TB</td><td>Baixo</td></tr>
     <tr class="base"><td class="k">2.000 veículos (baseline)</td><td class="num">~2.000 msg/s</td><td class="num">~3 MB/s</td>
-        <td class="num">~130 GB</td><td class="num">~3,9 TB</td></tr>
+        <td class="num">~130 GB</td><td class="num">~3,9 TB</td><td>Médio</td></tr>
     <tr><td class="k">5.000 veículos</td><td class="num">~5.000 msg/s</td><td class="num">~7,5 MB/s</td>
-        <td class="num">~325 GB</td><td class="num">~9,7 TB</td></tr>
-    <caption>Volumes derivados das premissas (1 msg/s · 1–2 KB · ~12 h/dia). O vídeo emergencial entra à parte, por ser esporádico.</caption>
+        <td class="num">~325 GB</td><td class="num">~9,7 TB</td><td>Alto</td></tr>
+    <caption>Volumes derivados das premissas (1 msg/s · 1–2 KB · ~12 h/dia). O vídeo emergencial entra à parte, por ser
+    esporádico. O custo de banda cresce de forma aproximadamente linear com a frota — daí a importância do corte na borda.</caption>
   </table>
 
   <p>Esses números confirmam o ponto central: a telemetria de rotina, embora contínua, é <b>modesta em volume</b>
@@ -312,18 +319,30 @@
     </div>
   </div>
 
-  <p>Os três gatilhos de emergência cobrem situações distintas, cada um com uma resposta proporcional ao risco:</p>
-  <ul class="bul">
-    <li><b>Problema interno do veículo</b> — alerta imediato com <b>snapshot</b> do estado no instante da detecção.
-    Se uma nova ocorrência surgir dentro de uma janela de tempo, são enviadas também as <b>imagens de antes e depois</b>
-    (recomendado: 5 min de cada lado). Quando a falha inviabiliza o uso do carro (ex.: enguiço), o evento <b>escala para
-    prioridade máxima</b>, pois implica retirar o veículo da frota ativa.</li>
-    <li><b>Risco externo</b> — desdobra-se em dois níveis. Numa <b>desaceleração brusca</b>, sobem apenas as imagens que
-    <b>antecederam</b> o evento (recomendado: último 1 min), sem streaming. Já o acionamento dos <b>sensores de
-    pré-impacto</b> (risco maior) dispara um <b>vídeo mais longo</b> (mín. 5 min) e <b>streaming ao vivo</b> por igual duração.</li>
-    <li><b>Botão de emergência do motorista</b> — nível máximo de prioridade: alerta, dados do <b>último 1 min</b> e
-    <b>streaming contínuo</b> até a <b>desativação manual</b>, pelo próprio motorista ou pela central.</li>
-  </ul>
+  <p>Cada gatilho de emergência recebe uma resposta proporcional ao risco. A tabela resume o comportamento
+  esperado de ponta a ponta — do sensor à ação da central:</p>
+
+  <table>
+    <tr><th>Gatilho</th><th>Dados enviados</th><th>Tamanho estimado</th><th>Latência esperada</th><th>Ação na nuvem</th></tr>
+    <tr><td class="k">Problema interno</td>
+        <td>Alerta + snapshot do estado; em caso de reincidência, imagens de 5 min antes e depois</td>
+        <td>~2 KB + 10–50 MB</td><td>Alerta &lt; 10 s</td>
+        <td>Abre ocorrência; se a falha inviabiliza o carro (ex.: enguiço), escala à prioridade máxima e retira o veículo da frota ativa</td></tr>
+    <tr><td class="k">Desaceleração brusca</td>
+        <td>Imagens do último 1 min, sem streaming</td>
+        <td>~10–30 MB</td><td>Alerta &lt; 10 s</td>
+        <td>Registra o evento e anexa a evidência ao dossiê da locação</td></tr>
+    <tr><td class="k">Sensores de pré-impacto</td>
+        <td>Vídeo de no mínimo 5 min + streaming ao vivo por igual duração</td>
+        <td>50–150 MB + stream</td><td>Alerta &lt; 10 s; stream imediato</td>
+        <td>Aciona a central de emergência e grava a evidência para a regulação do sinistro</td></tr>
+    <tr><td class="k">Botão do motorista</td>
+        <td>Alerta + dados do último 1 min + streaming contínuo até a desativação manual (motorista ou central)</td>
+        <td>Variável (stream)</td><td>Alerta &lt; 10 s</td>
+        <td>Prioridade máxima; a central acompanha ao vivo até o encerramento</td></tr>
+    <caption>Tamanhos e latências são estimativas de engenharia, a validar no piloto.</caption>
+  </table>
+
   <p>Em todos os casos, o vídeo só existe quando há motivo para existir — é o que mantém o custo de banda sob controle.</p>
 
   <div class="call key">
@@ -343,7 +362,11 @@
   <ul class="bul">
     <li><b>Tópicos separados</b> — telemetria de rotina e alertas de emergência trafegam em tópicos distintos, de modo que um alerta crítico nunca fique na fila atrás da telemetria de baixa prioridade.</li>
     <li><b>Partição por <code>vehicle_id</code></b> — garante a ordenação estrita dos eventos de cada veículo (por timestamp) mesmo sob carga, o que é essencial para reconstruir corretamente uma viagem ou um incidente.</li>
-    <li><b>Tolerância a falhas e replay</b> — as mensagens ficam retidas por um período configurável (recomendado: <b>7 dias</b> para a telemetria de rotina e <b>30 dias</b> para os alertas), com replicação entre brokers. Esse histórico permite <b>reprocessar</b> os dados a qualquer momento sem precisar de uma fonte adicional — é a base do modelo de reprocessamento adotado na Camada 3.</li>
+    <li><b>Tolerância a falhas e replay</b> — as mensagens ficam retidas por um período configurável, com replicação
+    entre brokers. Recomendamos <b>7 dias</b> para a telemetria de rotina (cobre o reprocesso típico: falha ou correção
+    de um job na mesma semana) e <b>30 dias</b> para os alertas (preserva a evidência durante a regulação do sinistro).
+    Esse histórico permite <b>reprocessar</b> os dados sem uma fonte adicional — a base do modelo da Camada 3.
+    Retenção consome disco do serviço gerenciado; o custo dessas janelas é estimado e <b>validado no piloto</b>.</li>
     <li><b>Consumidores independentes (consumer groups)</b> — o mesmo tópico é lido em paralelo por vários consumidores sem interferência mútua: o Spark (analítico), o serviço de alertas de emergência e o arquivamento no lakehouse leem o mesmo fluxo, cada um no seu ritmo.</li>
     <li><b>Serialização compacta</b> — mensagens em formato binário (Avro ou Protobuf) com <b>Schema Registry</b>: menos bytes na rede móvel (custo) e um contrato de dados validado entre o veículo e a nuvem (qualidade).</li>
     <li><b>Serviço gerenciado</b> — zero servidor Kafka para a equipe operar, coerente com a ausência de time de infraestrutura dedicado.</li>
@@ -396,8 +419,8 @@
     <div class="col">
       <h4>Streaming · contínuo, 24/7</h4>
       <ul>
-        <li>Detecção e triagem de emergências (caminho quente)</li>
-        <li>Atualização do estado ao vivo da frota no Redis</li>
+        <li>Detecção e triagem de emergências — alerta na central em <b>&lt; 10 s</b></li>
+        <li>Atualização do estado ao vivo da frota no Redis — <b>&lt; 5 s</b></li>
         <li>Janelas temporais (ex.: médias por 1–5 min) para congestionamento e anomalias</li>
         <li>Aterrissagem contínua dos eventos na camada Bronze</li>
       </ul>
@@ -413,8 +436,8 @@
     </div>
   </div>
   <p>Nos dois modos o motor é o mesmo — o Spark Structured Streaming processa o fluxo em <b>micro-batches</b>, com
-  latência de poucos segundos, suficiente para o alerta de emergência chegar à central em tempo hábil. É essa
-  unificação que dispensa um segundo motor de streaming.</p>
+  latência de poucos segundos, suficiente para cumprir as latências-alvo acima (alerta &lt; 10 s; estado &lt; 5 s).
+  É essa unificação que dispensa um segundo motor de streaming.</p>
 
   <div class="two">
     <div class="col">
@@ -442,11 +465,18 @@
   combinando bancos <b>NoSQL</b> ("not only SQL" — modelos não relacionais como chave-valor e documentos) com o
   relacional: cada tipo de dado vai para a tecnologia que melhor o atende em custo e desempenho.</p>
   <table>
-    <tr><th>Tecnologia</th><th>Papel</th><th>Por que</th></tr>
-    <tr><td class="k">Redis</td><td>Estado ao vivo da frota + cache de rotas</td><td>Leitura sub-milissegundo para o painel em tempo real</td></tr>
-    <tr><td class="k">MongoDB Atlas</td><td>Documentos: viagens, sinistros, inspeções</td><td>Schema flexível para dados semiestruturados; gerenciado</td></tr>
-    <tr><td class="k">Delta Lake</td><td>Histórico analítico de telemetria</td><td>Barato, escalável e com ACID; é a camada do lakehouse</td></tr>
-    <tr><td class="k">PostgreSQL (DW)</td><td>Financeiro e cobrança — reúso da Parte 2</td><td>ACID estrito; zero licença nova; modelo dimensional pronto</td></tr>
+    <tr><th>Tecnologia</th><th>Papel</th><th>Por que</th><th>Retenção / TTL</th></tr>
+    <tr><td class="k">Redis</td><td>Estado ao vivo da frota + cache de rotas</td><td>Leitura sub-milissegundo para o painel em tempo real</td>
+        <td>Minutos a horas, com expiração automática (TTL)</td></tr>
+    <tr><td class="k">MongoDB Atlas</td><td>Documentos: viagens, sinistros, inspeções</td><td>Schema flexível para dados semiestruturados; gerenciado</td>
+        <td>12 meses para documentos operacionais</td></tr>
+    <tr><td class="k">Delta Lake</td><td>Histórico analítico de telemetria</td><td>Barato, escalável e com ACID; é a camada do lakehouse</td>
+        <td>Resolução plena por 90 dias; depois downsampling; agregados por anos</td></tr>
+    <tr><td class="k">Lakehouse (arquivos)</td><td>Vídeos e imagens emergenciais</td><td>Storage de objetos barato para arquivos grandes e raros</td>
+        <td>Até a liquidação do sinistro + prazo legal aplicável</td></tr>
+    <tr><td class="k">PostgreSQL (DW)</td><td>Financeiro e cobrança — reúso da Parte 2</td><td>ACID estrito; zero licença nova; modelo dimensional pronto</td>
+        <td>Permanente (histórico financeiro e obrigações fiscais)</td></tr>
+    <caption>Retenções são valores iniciais recomendados, calibrados no piloto conforme o custo observado.</caption>
   </table>
   <p>As quatro peças formam um <b>ciclo de vida do dado</b> alinhado ao custo: o evento chega pelo Kafka e atualiza o
   <b>Redis</b> (estado ao vivo, com expiração automática — só o presente importa ali); o mesmo evento aterrissa no
@@ -625,17 +655,23 @@
     <li><b>Bem dimensionado</b> — a escala de cidade é tratada como virtude de projeto, não como limitação.</li>
   </ul>
 
-  <h3>Implantação em fases</h3>
-  <p>Coerente com a restrição de orçamento e a exigência de ROI rápido, a implantação é <b>incremental</b> — cada fase
-  entrega valor mensurável e valida o custo antes de liberar a seguinte:</p>
-  <ul class="bul">
-    <li><b>Fase 1 · Piloto</b> — subconjunto da frota com o pipeline mínimo (borda → Kafka → Spark/Delta → Grafana):
-    valida os gatilhos de emergência, o custo real de banda e a operação do painel ao vivo.</li>
-    <li><b>Fase 2 · Frota completa</b> — expansão da telemetria a todos os veículos, cobrança adaptativa integrada ao
-    DW e BI financeiro em produção — é aqui que o retorno financeiro do projeto se materializa.</li>
-    <li><b>Fase 3 · Inteligência</b> — ML preditivo (falhas e demanda), otimização de rotas e o concierge de voz como
-    diferencial de experiência — valor incremental sobre a mesma infraestrutura, sem novas peças.</li>
-  </ul>
+  <h3>Roadmap de implantação — marcos, entregáveis e KPIs</h3>
+  <p>Coerente com a restrição de orçamento e a exigência de ROI rápido, a implantação é <b>incremental</b>:
+  cada marco entrega valor mensurável e valida o custo antes de liberar o seguinte. Os indicadores-chave de
+  desempenho (KPIs — Key Performance Indicators) de cada marco:</p>
+
+  <table>
+    <tr><th>Marco</th><th>Entregáveis</th><th>KPIs</th></tr>
+    <tr><td class="k">1 · Piloto<br>(~100 veículos, 3 meses)</td>
+        <td>Pipeline mínimo (borda → Kafka → Spark/Delta → Grafana); gatilhos de emergência testados em campo</td>
+        <td>Latência de alerta &lt; 10 s · custo medido por veículo/mês · zero perda de eventos com ordenação por veículo</td></tr>
+    <tr><td class="k">2 · Escala inicial<br>(frota completa)</td>
+        <td>Telemetria em todos os veículos; cobrança adaptativa integrada ao DW; BI financeiro em produção</td>
+        <td>Custo por veículo/mês dentro da meta do piloto · % de devoluções com cobrança automática · redução de dias de veículo parado</td></tr>
+    <tr><td class="k">3 · Produção<br>(inteligência)</td>
+        <td>ML preditivo de falhas e demanda; otimização de rotas; concierge de voz</td>
+        <td>Redução adicional de dias parado · acerto da previsão de falhas · custo por veículo/mês estável</td></tr>
+  </table>
 
   <p>O resultado esperado responde, ponto a ponto, às três frentes de valor do negócio: a central <b>enxerga e
   socorre</b> a frota em tempo real; a cobrança passa a refletir o <b>uso e o desgaste reais</b> de cada locação; e o
@@ -643,7 +679,10 @@
   desenho — a economia não é um ajuste posterior, é o critério que escolheu cada peça desta arquitetura.</p>
 
   <div class="call key">
-    "Do dado operacional ao Big Data em tempo real — uma plataforma única, enxuta e segura para decidir e operar a frota."
+    <div class="ct">O que se pede</div>
+    Aprovar o <b>Marco 1 — piloto de ~100 veículos por 3 meses</b>, com orçamento fechado a partir das cotações dos
+    serviços gerenciados. <b>Próximo passo imediato:</b> definir o subconjunto da frota e solicitar as cotações.
+    Em 90 dias, o consórcio terá latência, custo por veículo e gatilhos validados em campo para decidir a expansão.
   </div>
 </section>
 
@@ -663,6 +702,7 @@
     <tr><td class="k">IA</td><td>Inteligência Artificial — sistemas computacionais capazes de tarefas que exigiriam inteligência humana.</td></tr>
     <tr><td class="k">IAM</td><td>Identity and Access Management — gestão de identidade e controle de acesso na nuvem.</td></tr>
     <tr><td class="k">KB / MB / GB / TB</td><td>Quilobyte, megabyte, gigabyte e terabyte — unidades de volume de dados (cada uma ~1.000× a anterior).</td></tr>
+    <tr><td class="k">KPI</td><td>Key Performance Indicator — indicador-chave de desempenho usado para acompanhar uma meta.</td></tr>
     <tr><td class="k">LGPD</td><td>Lei Geral de Proteção de Dados (Lei nº 13.709/2018) — legislação brasileira de privacidade.</td></tr>
     <tr><td class="k">LLM</td><td>Large Language Model — modelo de linguagem de grande porte (base dos assistentes de IA).</td></tr>
     <tr><td class="k">ML</td><td>Machine Learning — aprendizado de máquina; modelos que aprendem padrões a partir de dados.</td></tr>
